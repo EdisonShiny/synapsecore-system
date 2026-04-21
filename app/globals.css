@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --page-background: #0B1220;
+  --card-background: #111827;
+  --elevated-panel: #0F172A;
+  --primary-blue: #2563EB;
+  --secondary-blue: #60A5FA;
+  --primary-text: #F9FAFB;
+  --secondary-text: #9CA3AF;
+  --border: #1F2937;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #EF4444;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--page-background);
+  color: var(--primary-text);
+  font-family: Inter, Manrope, Poppins, ui-sans-serif, system-ui, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(37, 99, 235, 0.45);
+  color: #F9FAFB;
+}
+
+@layer components {
+  .synapse-focus {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-synapse-secondary focus-visible:ring-offset-2 focus-visible:ring-offset-synapse-page;
+  }
+
+  .synapse-panel {
+    @apply rounded-2xl border border-synapse-border bg-synapse-card shadow-panel;
+  }
+}
