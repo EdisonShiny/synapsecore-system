@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Download, Plus, Send } from "lucide-react";
 import {
   AiInsightCard,
@@ -31,13 +30,22 @@ import {
   TimelinePhaseCard,
   ValidationAlertsBlock
 } from "@/components";
-import type { Project } from "@/types/synapse";
-import { mockProjects } from "@/mocks/projects";
-import { mockDashboardData, mockActivityFeed } from "@/mocks/dashboard";
+import type { ApprovalState } from "@/types/synapse";
 
-type ProjectRow = Project;
+type ProjectRow = {
+  id: string;
+  project: string;
+  branch: string;
+  phase: string;
+  validation: "passed" | "warning" | "failed";
+  approval: ApprovalState;
+};
 
-const projectRows = mockProjects;
+const projectRows: ProjectRow[] = [
+  { id: "PRJ-101", project: "project Mercury", branch: "North", phase: "plan", validation: "passed", approval: "pending" },
+  { id: "PRJ-102", project: "project Atlas", branch: "South", phase: "execute", validation: "warning", approval: "approved" },
+  { id: "PRJ-103", project: "project Nova", branch: "HQ", phase: "improve", validation: "failed", approval: "needs_validation" }
+];
 
 export function DashboardTemplate() {
   return (
@@ -93,13 +101,7 @@ export function ProjectListTemplate() {
     <SectionBlock
       title="project list"
       description="Monitor project, phase, plan, validation, approval, and execution_update status."
-      action={
-        <Link href="/projects/create">
-          <PrimaryButton icon={<Plus className="h-4 w-4" />}>
-            Create project
-          </PrimaryButton>
-        </Link>
-      }
+      action={<PrimaryButton icon={<Plus className="h-4 w-4" />}>Create project</PrimaryButton>}
     >
       <FilterBar>
         <div className="w-full max-w-md">
@@ -114,13 +116,13 @@ export function ProjectListTemplate() {
         rows={projectRows}
         getRowKey={(row) => row.id}
         columns={[
-          { key: "title", header: "project" },
+          { key: "project", header: "project" },
           { key: "branch", header: "branch", render: (row) => <BranchTag branch={row.branch} /> },
-          { key: "priority", header: "priority", render: (row) => <StatusBadge tone={row.priority === "critical" ? "error" : row.priority === "high" ? "warning" : "info"}>{row.priority}</StatusBadge> },
+          { key: "phase", header: "phase", render: (row) => <StatusBadge tone="info">{row.phase}</StatusBadge> },
           {
             key: "validation",
             header: "validation",
-            render: (row) => <StatusBadge tone={row.validation === "proceed" ? "success" : row.validation === "proceed_with_caution" ? "warning" : "error"}>{row.validation}</StatusBadge>
+            render: (row) => <StatusBadge tone={row.validation === "passed" ? "success" : row.validation === "failed" ? "error" : "warning"}>{row.validation}</StatusBadge>
           },
           { key: "approval", header: "approval", render: (row) => <ApprovalBadge state={row.approval} /> }
         ]}
@@ -156,9 +158,9 @@ export function ProjectDetailTemplate() {
   return (
     <SectionBlock title="project detail" description="A timeline view for Input -> Project -> Phase -> Plan -> Validate -> Execute -> Improve.">
       <div className="grid gap-4 lg:grid-cols-3">
-        <TimelinePhaseCard phase="Input Analysis" status="completed" owner="HQ" progress={100} />
-        <TimelinePhaseCard phase="Phase Planning" status="approved" owner="HQ" progress={68} />
-        <TimelinePhaseCard phase="Execution" status="executing" owner="Branch Office" progress={24} />
+        <TimelinePhaseCard phase="Input" status="validated" owner="HQ" progress={100} />
+        <TimelinePhaseCard phase="Plan" status="active" owner="HQ" progress={68} />
+        <TimelinePhaseCard phase="Execute" status="planned" owner="Branch Office" progress={24} />
       </div>
     </SectionBlock>
   );
