@@ -93,7 +93,7 @@ export function validateAiOutput(raw: string, expectedModule: AiModule): Validat
 
   return {
     valid: errors.length === 0,
-    value: errors.length === 0 ? (parsed.value as AiOutput) : undefined,
+    value: errors.length === 0 ? (parsed.value as unknown as AiOutput) : undefined,
     errors,
     confidenceBand,
     requiresHumanReview

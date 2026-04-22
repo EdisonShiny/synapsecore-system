@@ -28,8 +28,8 @@ export type JsonValue =
 
 export interface PromptContext {
   userRole: UserRole;
-  currentProjectContext?: JsonValue;
-  inputData: JsonValue;
+  currentProjectContext?: unknown;
+  inputData: unknown;
 }
 
 export interface PromptPair {
