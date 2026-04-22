@@ -1,4 +1,4 @@
-export type RuntimeMode = "mock" | "real";
+﻿export type RuntimeMode = "mock" | "real";
 
 const requestedMode = process.env.SYNAPSECORE_MODE === "real" ? "real" : "mock";
 

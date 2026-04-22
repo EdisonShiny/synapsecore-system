@@ -1,4 +1,4 @@
-# SynapseCore System Backend Architecture
+﻿# SynapseCore System Backend Architecture
 
 ## Runtime Shape
 

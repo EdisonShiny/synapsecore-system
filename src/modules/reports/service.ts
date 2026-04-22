@@ -1,4 +1,4 @@
-import type { BranchReport, ProjectReport, RiskReport, User, ValidationReport } from "@/types";
+﻿import type { BranchReport, ProjectReport, RiskReport, User, ValidationReport } from "@/types";
 import { getStore } from "@/src/services/mock-store";
 
 export function getProjectReport(projectId: string, user: User): ProjectReport {

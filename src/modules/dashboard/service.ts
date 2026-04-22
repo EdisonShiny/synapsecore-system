@@ -1,4 +1,4 @@
-import type { DashboardActivity, DashboardAlert, DashboardSummary, User } from "@/types";
+﻿import type { DashboardActivity, DashboardAlert, DashboardSummary, User } from "@/types";
 import { getStore } from "@/src/services/mock-store";
 
 function allowedProjects(user: User) {
