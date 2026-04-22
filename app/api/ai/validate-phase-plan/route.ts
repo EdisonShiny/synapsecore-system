@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       return fail("Failed to validate phase plan", ["phase_id is required."]);
     }
 
-    return ok("Phase plan validated successfully", { validation: await validateGeneratedPhasePlan(body.phase_id, user) });
+    return ok("Phase plan validated successfully", await validateGeneratedPhasePlan(body.phase_id, user));
   } catch (error) {
     return fail("Failed to validate phase plan", [error instanceof Error ? error.message : "Unknown error"], 400);
   }

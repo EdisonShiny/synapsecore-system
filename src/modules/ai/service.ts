@@ -20,9 +20,9 @@ export async function analyzeInput(inputId: string, user: User) {
     store.branches.find((branch) => branch.id === user.branch_id)?.name ??
     "HQ";
 
-  const analysis = await analyzeInputWithAi(input, branchName);
-  store.ai_analysis.unshift(analysis);
-  return analysis;
+  const result = await analyzeInputWithAi(input, branchName);
+  store.ai_analysis.unshift(result.ai_analysis);
+  return result;
 }
 
 export async function createProjectFromAnalyzedInput(inputId: string, user: User, confirmProjectCreation = true) {
@@ -60,7 +60,10 @@ export async function reviewOutcome(executionUpdateId: string, user: User) {
     throw new Error("Branch Office can only review outcome for its own branch.");
   }
 
-  return reviewOutcomeWithAi(executionUpdate, phase);
+  const result = await reviewOutcomeWithAi(executionUpdate, phase, project);
+  return {
+    outcome_review: result.outcome_review
+  };
 }
 
 export async function recommendApproval(projectId: string, phaseId: string | null, user: User) {
@@ -78,5 +81,8 @@ export async function recommendApproval(projectId: string, phaseId: string | nul
   const phase = phaseId ? store.phases.find((entry) => entry.id === phaseId) ?? null : null;
   const validation = phase ? store.validations.find((entry) => entry.phase_id === phase.id) ?? null : null;
 
-  return recommendApprovalWithAi(project, phase, validation);
+  const result = await recommendApprovalWithAi(project, phase, validation);
+  return {
+    approval_recommendation: result.approval_recommendation
+  };
 }

@@ -3,13 +3,27 @@ import { nowIso, plusDays } from "@/src/utils/date";
 import { createId } from "@/src/utils/id";
 
 export function createInitialPhase(projectId: string, ownerRole: Project["owner_role"]): Phase {
+  return createInitialPhaseFromRecommendation(projectId, ownerRole);
+}
+
+export function createInitialPhaseFromRecommendation(
+  projectId: string,
+  ownerRole: Project["owner_role"],
+  recommendation?: {
+    phase_name?: string;
+    objective?: string;
+    responsible_party?: Phase["responsible_party"];
+  }
+): Phase {
   return {
     id: createId(),
     project_id: projectId,
-    phase_name: "Initial assessment",
+    phase_name: recommendation?.phase_name ?? "Initial assessment",
     phase_order: 1,
-    objective: "Confirm the project objective and prepare the first plan.",
-    responsible_party: ownerRole,
+    objective:
+      recommendation?.objective ??
+      "Confirm the project objective and prepare the first plan.",
+    responsible_party: recommendation?.responsible_party ?? ownerRole,
     status: "pending",
     due_date: plusDays(3),
     created_at: nowIso(),

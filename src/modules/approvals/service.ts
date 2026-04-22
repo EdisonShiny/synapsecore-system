@@ -34,7 +34,8 @@ export async function createApprovalRequest(
 
   const phase = payload.phase_id ? store.phases.find((entry) => entry.id === payload.phase_id) ?? null : null;
   const validation = phase ? store.validations.find((entry) => entry.phase_id === phase.id) ?? null : null;
-  const recommendation = await recommendApprovalWithAi(project, phase, validation);
+  const aiResult = await recommendApprovalWithAi(project, phase, validation);
+  const recommendation = aiResult.recommendation;
 
   const approval: Approval = {
     id: createId(),

@@ -20,12 +20,13 @@ export async function createInput(payload: Omit<ProjectInput, "id" | "created_at
   store.project_inputs.unshift(input);
 
   const branch = store.branches.find((entry) => entry.id === user.branch_id);
-  const analysis = await analyzeInputWithAi(input, branch?.name ?? "HQ");
-  store.ai_analysis.unshift(analysis);
+  const result = await analyzeInputWithAi(input, branch?.name ?? "HQ");
+  store.ai_analysis.unshift(result.ai_analysis);
 
   return {
     input,
-    ai_analysis: analysis
+    ai_analysis: result.ai_analysis,
+    input_understanding: result.input_understanding
   };
 }
 

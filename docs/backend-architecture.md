@@ -6,7 +6,7 @@
 - Language: TypeScript
 - Data mode: in-memory mock database by default
 - Real mode switch: `SYNAPSECORE_MODE=real`
-- AI fallback rule: if `OPENAI_API_KEY` is missing, AI stays in mock mode even when real mode is requested
+- AI fallback rule: if `ZAI_API_URL`, `ZAI_API_KEY`, or `ZAI_MODEL` is missing, AI stays in mock mode even when real mode is requested
 - Database fallback rule: if `DATABASE_URL` is missing, data stays in mock mode even when real mode is requested
 
 ## Contract Ownership

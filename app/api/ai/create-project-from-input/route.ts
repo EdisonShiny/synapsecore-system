@@ -12,9 +12,10 @@ export async function POST(request: NextRequest) {
       return fail("Failed to create project from input", ["input_id is required."]);
     }
 
-    return ok("Project created from input successfully", {
-      project: await createProjectFromAnalyzedInput(body.input_id, user, body.confirm_project_creation ?? true)
-    });
+    return ok(
+      "Project created from input successfully",
+      await createProjectFromAnalyzedInput(body.input_id, user, body.confirm_project_creation ?? true)
+    );
   } catch (error) {
     return fail("Failed to create project from input", [error instanceof Error ? error.message : "Unknown error"], 400);
   }

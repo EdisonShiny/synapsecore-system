@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       return fail("Failed to generate phase plan", ["phase_id is required."]);
     }
 
-    return ok("Phase plan generated successfully", { plan: await generatePhasePlan(body.phase_id, user) });
+    return ok("Phase plan generated successfully", await generatePhasePlan(body.phase_id, user));
   } catch (error) {
     return fail("Failed to generate phase plan", [error instanceof Error ? error.message : "Unknown error"], 400);
   }

@@ -1,0 +1,29 @@
+
+> synapsecore-system-design@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 1897ms
+ ✓ Compiled /api/auth/login in 435ms (60 modules)
+ POST /api/auth/login 200 in 535ms
+ POST /api/auth/login 200 in 12ms
+ ✓ Compiled /api/inputs in 207ms (78 modules)
+ POST /api/inputs 200 in 255ms
+ ✓ Compiled /api/ai/create-project-from-input in 119ms (84 modules)
+ POST /api/ai/create-project-from-input 200 in 156ms
+ ✓ Compiled /api/projects/[id]/phases in 43ms (86 modules)
+ GET /api/projects/b834cf8c-0111-4dc3-8604-759e46f685b4/phases 200 in 385ms
+ ✓ Compiled /api/ai/generate-phase-plan in 51ms (88 modules)
+ POST /api/ai/generate-phase-plan 200 in 78ms
+ ✓ Compiled /api/ai/validate-phase-plan in 46ms (90 modules)
+ POST /api/ai/validate-phase-plan 200 in 74ms
+ ✓ Compiled /api/approvals/request in 78ms (93 modules)
+ POST /api/approvals/request 200 in 106ms
+ POST /api/auth/login 200 in 11ms
+ ✓ Compiled /api/approvals/[id]/decision in 50ms (95 modules)
+ POST /api/approvals/f31f140b-b37b-4e88-b224-b9ab411ccf9b/decision 200 in 380ms
+ ✓ Compiled /api/phases/[id]/execute-update in 76ms (98 modules)
+ POST /api/phases/54b8e058-4c56-4cdb-bd3d-9ea74e4ceaf4/execute-update 200 in 430ms

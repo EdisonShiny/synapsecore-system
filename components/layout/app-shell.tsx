@@ -1,30 +1,28 @@
 "use client";
 
+import Link from "next/link";
 import {
   BarChart3,
-  Bell,
   Bot,
   CheckSquare,
   FileText,
   LayoutDashboard,
   Menu,
-  Search,
   Settings,
   ShieldCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/types/synapse";
 import { RoleBadge } from "@/components/ui/badges";
-import { SearchInput } from "@/components/ui/forms";
 
 const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard },
-  { label: "Projects", icon: FileText },
-  { label: "AI Workflow", icon: Bot },
-  { label: "Validation Center", icon: ShieldCheck },
-  { label: "Approvals", icon: CheckSquare },
-  { label: "Reports", icon: BarChart3 },
-  { label: "Settings", icon: Settings }
+  { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+  { label: "Projects", icon: FileText, href: "/projects" },
+  { label: "Plan & Validate", icon: Bot, href: "/ai-workflow" },
+  { label: "Validation", icon: ShieldCheck, href: "/validation-center" },
+  { label: "Approvals", icon: CheckSquare, href: "/approvals" },
+  { label: "Reports", icon: BarChart3, href: "/reports" },
+  { label: "Settings", icon: Settings, href: "/settings" }
 ] as const;
 
 export function AppSidebar({
@@ -35,33 +33,33 @@ export function AppSidebar({
   collapsed?: boolean;
 }) {
   return (
-    <aside className={cn("hidden min-h-screen border-r border-synapse-border bg-synapse-elevated p-4 lg:block", collapsed ? "w-20" : "w-72")}>
-      <div className="mb-8 flex items-center gap-3 px-2">
+    <aside className={cn("hidden min-h-screen border-r border-synapse-border bg-synapse-elevated p-4 lg:block", collapsed ? "w-20" : "w-64")}>
+      <div className="mb-6 flex items-center gap-3 px-2">
         <div className="grid h-10 w-10 place-items-center rounded-xl bg-synapse-primary text-card-title text-white">SC</div>
         {!collapsed ? (
           <div>
             <p className="text-card-title text-synapse-text">SynapseCore System</p>
-            <p className="text-meta text-synapse-muted">HQ and branch workflow</p>
+            <p className="text-meta text-synapse-muted">Simple workflow demo</p>
           </div>
         ) : null}
       </div>
       <nav className="grid gap-2" aria-label="Primary navigation">
-        {navItems.map(({ label, icon: Icon }) => {
+        {navItems.map(({ label, icon: Icon, href }) => {
           const selected = label === activeItem;
           return (
-            <button
+            <Link
               key={label}
+              href={href}
               className={cn(
                 "synapse-focus flex min-h-11 items-center gap-3 rounded-xl px-3 text-left text-body transition",
                 selected
                   ? "bg-synapse-primary text-white shadow-panel"
                   : "text-synapse-muted hover:bg-synapse-card hover:text-synapse-text"
               )}
-              type="button"
             >
               <Icon className="h-5 w-5 shrink-0" />
               {!collapsed ? <span>{label}</span> : null}
-            </button>
+            </Link>
           );
         })}
       </nav>
@@ -86,22 +84,11 @@ export function TopHeader({
         </button>
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-page-title text-synapse-text">{pageTitle}</h1>
+          <p className="mt-1 text-meta text-synapse-muted">Focus on the current step and move forward.</p>
         </div>
-        <div className="hidden w-full max-w-md md:block">
-          <SearchInput aria-label="Search" />
-        </div>
-        <button className="synapse-focus rounded-xl border border-synapse-border bg-synapse-elevated p-2 text-synapse-muted hover:text-white" type="button" aria-label="Notifications">
-          <Bell className="h-5 w-5" />
-        </button>
         <RoleBadge role={role} />
         <div className="grid h-10 w-10 place-items-center rounded-full border border-synapse-border bg-synapse-card text-body font-semibold text-synapse-text">
           {avatarInitials}
-        </div>
-      </div>
-      <div className="mt-3 md:hidden">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-synapse-muted" />
-          <input className="synapse-focus w-full rounded-xl border border-synapse-border bg-synapse-elevated py-2.5 pl-9 pr-3 text-body text-synapse-text" placeholder="Search" />
         </div>
       </div>
     </header>

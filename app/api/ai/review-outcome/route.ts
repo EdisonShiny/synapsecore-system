@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       return fail("Failed to review outcome", ["execution_update_id is required."]);
     }
 
-    return ok("Outcome reviewed successfully", { outcome_review: await reviewOutcome(body.execution_update_id, user) });
+    return ok("Outcome reviewed successfully", await reviewOutcome(body.execution_update_id, user));
   } catch (error) {
     return fail("Failed to review outcome", [error instanceof Error ? error.message : "Unknown error"], 400);
   }

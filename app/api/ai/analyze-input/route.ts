@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       return fail("Failed to analyze input", ["input_id is required."]);
     }
 
-    return ok("Input analyzed successfully", { ai_analysis: await analyzeInput(body.input_id, user) });
+    return ok("Input analyzed successfully", await analyzeInput(body.input_id, user));
   } catch (error) {
     return fail("Failed to analyze input", [error instanceof Error ? error.message : "Unknown error"], 400);
   }

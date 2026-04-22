@@ -12,9 +12,10 @@ export async function POST(request: NextRequest) {
       return fail("Failed to recommend approval", ["project_id is required."]);
     }
 
-    return ok("Approval recommendation generated successfully", {
-      approval_recommendation: await recommendApproval(body.project_id, body.phase_id ?? null, user)
-    });
+    return ok(
+      "Approval recommendation generated successfully",
+      await recommendApproval(body.project_id, body.phase_id ?? null, user)
+    );
   } catch (error) {
     return fail("Failed to recommend approval", [error instanceof Error ? error.message : "Unknown error"], 400);
   }

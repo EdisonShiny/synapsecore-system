@@ -82,7 +82,9 @@ export function updatePhase(phaseId: string, updates: Partial<Omit<Phase, "id" |
 export async function generatePlanForPhase(phaseId: string, user: User) {
   const store = getStore();
   const { phase } = getPhaseById(phaseId, user);
-  const plan = await generatePhasePlanWithAi(phase);
+  const project = store.projects.find((entry) => entry.id === phase.project_id) ?? null;
+  const aiResult = await generatePhasePlanWithAi(phase, { project });
+  const plan = aiResult.plan;
   const existing = store.plans.findIndex((entry) => entry.phase_id === phaseId);
 
   if (existing >= 0) {
@@ -94,7 +96,10 @@ export async function generatePlanForPhase(phaseId: string, user: User) {
   phase.status = "planned";
   phase.updated_at = nowIso();
 
-  return plan;
+  return {
+    phase_plan_generation: aiResult.phase_plan_generation,
+    plan
+  };
 }
 
 export async function validatePhasePlan(phaseId: string, user: User) {
@@ -107,7 +112,8 @@ export async function validatePhasePlan(phaseId: string, user: User) {
     throw new Error("Plan not found for phase.");
   }
 
-  const validation = await validatePlanWithAi(phase, plan);
+  const aiResult = await validatePlanWithAi(phase, plan, { project });
+  const validation = aiResult.validation_record;
   const existing = store.validations.findIndex((entry) => entry.phase_id === phase.id);
 
   if (existing >= 0) {
@@ -118,5 +124,8 @@ export async function validatePhasePlan(phaseId: string, user: User) {
 
   applyValidationToPhase(phase, project, validation);
 
-  return validation;
+  return {
+    validation: aiResult.validation,
+    validation_record: validation
+  };
 }

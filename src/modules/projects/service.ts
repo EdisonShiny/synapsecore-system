@@ -1,7 +1,7 @@
 import type { Project, User } from "@/types";
-import { createProjectDraftFromAnalysis } from "@/src/services/ai-engine";
+import { identifyProjectWithAi } from "@/src/services/ai-engine";
 import { getStore } from "@/src/services/mock-store";
-import { createInitialPhase } from "@/src/services/workflow";
+import { createInitialPhase, createInitialPhaseFromRecommendation } from "@/src/services/workflow";
 import { nowIso } from "@/src/utils/date";
 import { createId } from "@/src/utils/id";
 
@@ -51,7 +51,10 @@ export async function createProjectFromInput(inputId: string, user: User, confir
   }
 
   if (!confirmProjectCreation) {
-    return null;
+    return {
+      project_identification: null,
+      project: null
+    };
   }
 
   const uploadingUser = store.users.find((entry) => entry.id === input.uploaded_by) ?? user;
@@ -61,14 +64,20 @@ export async function createProjectFromInput(inputId: string, user: User, confir
   if (!branchId) {
     throw new Error("No branch is available for project creation.");
   }
-  const ownerRole = uploadingUser.role;
-  const project = await createProjectDraftFromAnalysis(input, analysis, user.id, branchId, ownerRole);
+  const aiResult = await identifyProjectWithAi(input, analysis, user.id, branchId);
+  const project = aiResult.project;
 
   input.project_id = project.id;
   store.projects.unshift(project);
-  store.phases.unshift(createInitialPhase(project.id, project.owner_role));
+  store.phases.unshift(
+    createInitialPhaseFromRecommendation(project.id, project.owner_role, {
+      phase_name: aiResult.project_identification.recommended_initial_phase,
+      objective: `Prepare a grounded plan for ${aiResult.project_identification.recommended_initial_phase.toLowerCase()}.`,
+      responsible_party: aiResult.project_identification.recommended_owner
+    })
+  );
 
-  return project;
+  return aiResult;
 }
 
 export function updateProject(projectId: string, updates: Partial<Omit<Project, "id" | "created_at">>, user: User) {

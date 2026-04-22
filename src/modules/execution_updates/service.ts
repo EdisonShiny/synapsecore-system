@@ -49,7 +49,8 @@ export async function createExecutionUpdate(
   phase.updated_at = nowIso();
   project.updated_at = nowIso();
 
-  const outcome_review = await reviewOutcomeWithAi(executionUpdate, phase);
+  const aiResult = await reviewOutcomeWithAi(executionUpdate, phase, project);
+  const outcome_review = aiResult.review;
 
   let next_phase: Phase | null = null;
   if (outcome_review.next_phase_needed) {
@@ -79,7 +80,7 @@ export async function createExecutionUpdate(
 
   return {
     execution_update: executionUpdate,
-    outcome_review,
+    outcome_review: aiResult.outcome_review,
     next_phase
   };
 }

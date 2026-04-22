@@ -34,19 +34,43 @@ import { DashboardTemplate, ProjectListTemplate } from "@/features/page-template
 
 ## AI Logic Module
 
-The AI reasoning layer currently lives in `src/modules/ai` as a disconnected module. It is intentionally not wired into frontend pages or backend endpoints yet, so integration can happen after the other team modules are ready.
+The AI reasoning layer in `src/modules/ai` is now wired into the backend AI endpoints with strict prompt, schema, validation, and retry handling. The runtime stays deterministic in mock mode until a real Z.AI configuration is provided.
 
 Key files:
 
 - `src/modules/ai/prompts.ts`: strict system prompts and user prompt templates for each AI module.
 - `src/modules/ai/schemas.ts`: JSON-schema-style output contracts for strict AI responses.
 - `src/modules/ai/validation.ts`: strict JSON validation, confidence handling, human-review gating, and retry strategy.
-- `src/modules/ai/mock-responses.ts`: deterministic fallback responses for demo mode.
+- `src/services/ai-engine.ts`: AI execution runtime, deterministic fallback generation, and entity mapping.
 - `src/modules/ai/pipeline.ts`: module-to-endpoint pipeline metadata.
 - `src/modules/ai/examples.ts`: example request and response pairs for the demo flow.
 - `docs/ai-logic-integration.md`: integration guide for backend, frontend, and demo-mode editors.
 
-When integrating later, route AI calls through the official `/ai/*` endpoints and keep frontend components consuming validated API responses instead of importing prompt text directly.
+When integrating the real provider later, configure the Z.AI environment variables and keep frontend components consuming validated `/ai/*` endpoint responses instead of importing prompt text directly.
+
+## Runtime Modes
+
+- `SYNAPSECORE_MODE=mock`: deterministic demo mode with no external AI dependency.
+- `SYNAPSECORE_MODE=real`: enables the real AI request path.
+- `ZAI_API_URL`: OpenAI-compatible chat/completions endpoint to call in real mode.
+- `ZAI_API_KEY`: provider key for the Z.AI runtime.
+- `ZAI_MODEL`: model id used for the request.
+- `DATABASE_URL`: optional future real database connection string.
+
+If any required AI runtime variable is missing, the app falls back to mock AI automatically.
+
+## App Routes
+
+- `/login`
+- `/dashboard`
+- `/projects`
+- `/projects/create`
+- `/projects/[id]`
+- `/ai-workflow`
+- `/validation-center`
+- `/approvals`
+- `/reports`
+- `/settings`
 
 ## Shared Contract
 
