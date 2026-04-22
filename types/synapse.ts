@@ -1,20 +1,16 @@
-export type SynapseEntity =
-  | "project"
-  | "phase"
-  | "plan"
-  | "validation"
-  | "approval"
-  | "execution_update"
-  | "ai_analysis"
-  | "branch"
-  | "HQ";
+import type {
+  ApprovalStatus,
+  PhaseStatus as ContractPhaseStatus,
+  SynapseEntity,
+  UserRole
+} from "@/types/common";
 
-export type UserRole = "HQ" | "Branch Office";
+export type { SynapseEntity, UserRole };
 
 export type StatusTone = "success" | "warning" | "error" | "info" | "neutral";
 
-export type ApprovalState = "pending" | "approved" | "rejected" | "needs_validation";
+export type ApprovalState = ApprovalStatus;
 
 export type ConfidenceLevel = "high" | "medium" | "low";
 
-export type PhaseStatus = "planned" | "active" | "validated" | "executed" | "improving";
+export type PhaseStatus = ContractPhaseStatus;

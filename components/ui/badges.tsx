@@ -1,7 +1,8 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { ApprovalState, ConfidenceLevel, StatusTone, UserRole } from "@/types/synapse";
+import type { ApprovalStatus, UserRole } from "@/types/common";
+import type { ConfidenceLevel, StatusTone } from "@/types/synapse";
 
 const toneMap: Record<StatusTone, string> = {
   success: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
@@ -11,11 +12,12 @@ const toneMap: Record<StatusTone, string> = {
   neutral: "border-synapse-border bg-synapse-elevated text-synapse-muted"
 };
 
-const approvalTone: Record<ApprovalState, StatusTone> = {
+const approvalTone: Record<ApprovalStatus, StatusTone> = {
   pending: "warning",
   approved: "success",
   rejected: "error",
-  needs_validation: "info"
+  revise_requested: "info",
+  escalated: "error"
 };
 
 const confidenceTone: Record<ConfidenceLevel, StatusTone> = {
@@ -44,7 +46,7 @@ export function StatusBadge({ children, tone = "neutral", className }: BadgeProp
   );
 }
 
-export function ApprovalBadge({ state }: { state: ApprovalState }) {
+export function ApprovalBadge({ state }: { state: ApprovalStatus }) {
   return <StatusBadge tone={approvalTone[state]}>{state.replace("_", " ")}</StatusBadge>;
 }
 

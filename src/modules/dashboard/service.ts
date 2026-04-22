@@ -1,4 +1,4 @@
-import type { DashboardActivity, DashboardAlert, DashboardSummary, User } from "@/types";
+import type { DashboardActivity, DashboardAlert, DashboardSummary, User, UserRole } from "@/types";
 import { getStore } from "@/src/services/mock-store";
 
 function allowedProjects(user: User) {
@@ -62,6 +62,7 @@ export function getDashboardActivity(user: User): DashboardActivity[] {
   const store = getStore();
   const projects = allowedProjects(user);
   const projectIds = new Set(projects.map((project) => project.id));
+  const resolveActorRole = (role?: UserRole): UserRole => role ?? "Branch Office";
 
   return [
     ...store.project_inputs.map((input) => ({
@@ -70,7 +71,7 @@ export function getDashboardActivity(user: User): DashboardActivity[] {
       phase_id: null,
       message: `Input submitted from ${input.source_type}.`,
       actor_name: store.users.find((entry) => entry.id === input.uploaded_by)?.name ?? "Unknown",
-      actor_role: store.users.find((entry) => entry.id === input.uploaded_by)?.role ?? "Branch Office",
+      actor_role: resolveActorRole(store.users.find((entry) => entry.id === input.uploaded_by)?.role),
       project_status: input.project_id ? store.projects.find((entry) => entry.id === input.project_id)?.status ?? null : null,
       approval_status: input.project_id ? store.projects.find((entry) => entry.id === input.project_id)?.approval_status ?? null : null,
       created_at: input.created_at
@@ -86,7 +87,7 @@ export function getDashboardActivity(user: User): DashboardActivity[] {
         phase_id: executionUpdate.phase_id,
         message: `execution_update submitted with ${executionUpdate.success_level} result.`,
         actor_name: userEntry?.name ?? "Unknown",
-        actor_role: userEntry?.role ?? "Branch Office",
+        actor_role: resolveActorRole(userEntry?.role),
         project_status: project?.status ?? null,
         approval_status: project?.approval_status ?? null,
         created_at: executionUpdate.submitted_at
@@ -98,7 +99,7 @@ export function getDashboardActivity(user: User): DashboardActivity[] {
       phase_id: approval.phase_id,
       message: `Approval request is ${approval.status}.`,
       actor_name: approval.decided_by ? store.users.find((entry) => entry.id === approval.decided_by)?.name ?? "HQ" : "Workflow system",
-      actor_role: approval.decided_by ? "HQ" : "Branch Office",
+      actor_role: approval.decided_by ? ("HQ" as const) : ("Branch Office" as const),
       project_status: store.projects.find((entry) => entry.id === approval.project_id)?.status ?? null,
       approval_status: approval.status,
       created_at: approval.decided_at ?? store.projects.find((entry) => entry.id === approval.project_id)?.updated_at ?? new Date().toISOString()

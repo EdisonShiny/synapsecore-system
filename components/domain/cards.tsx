@@ -2,7 +2,8 @@
 
 import { AlertTriangle, Bot, CheckCircle2, Clock, FileText, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { PhaseStatus, StatusTone } from "@/types/synapse";
+import type { ApprovalStatus, PhaseStatus } from "@/types/common";
+import type { StatusTone } from "@/types/synapse";
 import { ApprovalBadge, BranchTag, ConfidenceBadge, StatusBadge } from "@/components/ui/badges";
 import { ConfidenceMeter, ProgressBar } from "@/components/ui/feedback";
 import { PrimaryButton, SecondaryButton, DangerButton } from "@/components/ui/buttons";
@@ -114,11 +115,13 @@ export function ValidationWarningCard({
 }
 
 const phaseTone: Record<PhaseStatus, StatusTone> = {
-  planned: "neutral",
-  active: "info",
-  validated: "success",
-  executed: "success",
-  improving: "warning"
+  pending: "neutral",
+  planned: "info",
+  validating: "warning",
+  approved: "success",
+  executing: "info",
+  completed: "success",
+  blocked: "error"
 };
 
 export function TimelinePhaseCard({
@@ -192,10 +195,10 @@ export function ApprovalActionBar({
 }
 
 export function PendingApprovalListCard() {
-  const approvals = [
-    { project: "project Alpha", branch: "North", state: "pending" as const },
-    { project: "project Delta", branch: "South", state: "needs_validation" as const },
-    { project: "project Orion", branch: "HQ", state: "approved" as const }
+  const approvals: Array<{ project: string; branch: string; state: ApprovalStatus }> = [
+    { project: "project Alpha", branch: "North", state: "pending" },
+    { project: "project Delta", branch: "South", state: "revise_requested" },
+    { project: "project Orion", branch: "HQ", state: "approved" }
   ];
 
   return (
@@ -204,6 +207,29 @@ export function PendingApprovalListCard() {
       <div className="grid gap-3">
         {approvals.map((item) => (
           <div key={item.project} className="flex items-center justify-between gap-3 rounded-xl bg-synapse-elevated p-3">
+            <div>
+              <p className="text-body text-synapse-text">{item.project}</p>
+              <BranchTag branch={item.branch} />
+            </div>
+            <ApprovalBadge state={item.state} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function PendingApprovalList({
+  items
+}: {
+  items: Array<{ id: string; project: string; branch: string; state: ApprovalStatus }>;
+}) {
+  return (
+    <div className="rounded-2xl border border-synapse-border bg-synapse-card p-5 shadow-panel">
+      <h3 className="mb-4 text-card-title text-synapse-text">Pending approval list</h3>
+      <div className="grid gap-3">
+        {items.map((item) => (
+          <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-synapse-elevated p-3">
             <div>
               <p className="text-body text-synapse-text">{item.project}</p>
               <BranchTag branch={item.branch} />
@@ -229,18 +255,26 @@ export function QuickActionPanel() {
   );
 }
 
-export function BranchPerformanceBlock() {
+export function BranchPerformanceBlock({
+  items = ["North", "South", "Central"].map((branch, index) => ({
+    branch,
+    value: 82 - index * 9,
+    label: "execution_update health"
+  }))
+}: {
+  items?: Array<{ branch: string; value: number; label?: string }>;
+}) {
   return (
     <div className="rounded-2xl border border-synapse-border bg-synapse-card p-5 shadow-panel">
       <h3 className="text-card-title text-synapse-text">branch performance</h3>
       <div className="mt-4 grid gap-4">
-        {["North", "South", "Central"].map((branch, index) => (
-          <div key={branch} className="grid gap-2">
+        {items.map((item) => (
+          <div key={item.branch} className="grid gap-2">
             <div className="flex justify-between text-body">
-              <span className="text-synapse-text">{branch}</span>
-              <span className="text-synapse-muted">{82 - index * 9}%</span>
+              <span className="text-synapse-text">{item.branch}</span>
+              <span className="text-synapse-muted">{item.value}%</span>
             </div>
-            <ProgressBar value={82 - index * 9} label="execution_update health" />
+            <ProgressBar value={item.value} label={item.label ?? "execution_update health"} />
           </div>
         ))}
       </div>
@@ -248,24 +282,45 @@ export function BranchPerformanceBlock() {
   );
 }
 
-export function ValidationAlertsBlock() {
+export function ValidationAlertsBlock({
+  items = [
+    { id: "default-warning", title: "validation warning", description: "plan contains an assumption requiring HQ review before approval.", severity: "warning" as const },
+    { id: "default-error", title: "hallucination limiter triggered", description: "ai_analysis references a missing branch file.", severity: "error" as const }
+  ]
+}: {
+  items?: Array<{ id: string; title: string; description: string; severity?: "warning" | "error" }>;
+}) {
   return (
     <div className="grid gap-3">
-      <ValidationWarningCard title="validation warning" description="plan contains an assumption requiring HQ review before approval." />
-      <ValidationWarningCard title="hallucination limiter triggered" description="ai_analysis references a missing branch file." severity="error" />
+      {items.map((item) => (
+        <ValidationWarningCard
+          key={item.id}
+          title={item.title}
+          description={item.description}
+          severity={item.severity}
+        />
+      ))}
     </div>
   );
 }
 
-export function ReportSummaryCard() {
+export function ReportSummaryCard({
+  title = "report summary",
+  description = "Latest report combines project, approval, validation, and execution_update signals.",
+  confidenceLevel = "high"
+}: {
+  title?: string;
+  description?: string;
+  confidenceLevel?: "high" | "medium" | "low";
+}) {
   return (
     <div className="rounded-2xl border border-synapse-border bg-synapse-card p-5 shadow-panel">
       <div className="mb-4 flex items-center gap-2">
         <Clock className="h-5 w-5 text-synapse-secondary" />
-        <h3 className="text-card-title text-synapse-text">report summary</h3>
+        <h3 className="text-card-title text-synapse-text">{title}</h3>
       </div>
-      <ConfidenceBadge level="high" />
-      <p className="mt-3 text-body text-synapse-muted">Latest report combines project, approval, validation, and execution_update signals.</p>
+      <ConfidenceBadge level={confidenceLevel} />
+      <p className="mt-3 text-body text-synapse-muted">{description}</p>
     </div>
   );
 }

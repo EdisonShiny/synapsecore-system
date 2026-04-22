@@ -108,7 +108,7 @@ export function getValidationReport(user: User): ValidationReport {
     required_human_review_count: validations.filter((validation) => validation.human_review_level === "required").length,
     do_not_proceed_count: validations.filter((validation) => validation.proceed_recommendation === "do_not_proceed").length,
     average_groundedness_score: Number(average_groundedness_score.toFixed(2)),
-    top_missing_information: [...missingInfoFrequency.entries()]
+    top_missing_information: Array.from(missingInfoFrequency.entries())
       .sort((left, right) => right[1] - left[1])
       .slice(0, 5)
       .map(([item]) => item),
