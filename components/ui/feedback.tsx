@@ -5,10 +5,10 @@ import { cn } from "@/lib/utils";
 import type { StatusTone } from "@/types/synapse";
 
 const toneClass: Record<StatusTone, string> = {
-  success: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
-  warning: "border-amber-400/30 bg-amber-400/10 text-amber-200",
-  error: "border-red-400/30 bg-red-400/10 text-red-200",
-  info: "border-blue-400/30 bg-blue-400/10 text-blue-200",
+  success: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  warning: "border-amber-200 bg-amber-50 text-amber-700",
+  error: "border-red-200 bg-red-50 text-red-700",
+  info: "border-blue-200 bg-blue-50 text-blue-700",
   neutral: "border-synapse-border bg-synapse-elevated text-synapse-text"
 };
 
@@ -47,11 +47,11 @@ export function ModalDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/25 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
       <div className="w-full max-w-lg rounded-2xl border border-synapse-border bg-synapse-card p-6 shadow-soft">
         <div className="mb-5 flex items-center justify-between gap-4">
           <h2 className="text-section-title text-synapse-text">{title}</h2>
-          <button className="synapse-focus rounded-xl p-2 text-synapse-muted hover:bg-synapse-elevated hover:text-white" onClick={onClose} aria-label="Close modal">
+          <button className="synapse-focus rounded-xl p-2 text-synapse-muted hover:bg-synapse-elevated hover:text-synapse-text" onClick={onClose} aria-label="Close modal">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -77,7 +77,7 @@ export function TabsShell({
           key={tab}
           className={cn(
             "synapse-focus rounded-lg px-3 py-2 text-body transition",
-            activeTab === tab ? "bg-synapse-primary text-white" : "text-synapse-muted hover:text-white"
+            activeTab === tab ? "bg-synapse-primary text-white" : "text-synapse-muted hover:text-synapse-text"
           )}
           onClick={() => onChange?.(tab)}
           type="button"

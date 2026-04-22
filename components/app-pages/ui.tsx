@@ -18,7 +18,7 @@ export function Panel({
   className?: string;
 }) {
   return (
-    <section className={cn("grid gap-4 rounded-2xl border border-synapse-border bg-synapse-card p-5 shadow-panel", className)}>
+    <section className={cn("grid gap-4 rounded-2xl border border-synapse-border bg-synapse-card p-5 shadow-panel md:p-6", className)}>
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h2 className="text-card-title text-synapse-text">{title}</h2>
@@ -65,7 +65,7 @@ export function MetricGrid({
   return (
     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
       {items.map((item) => (
-        <div key={item.label} className="rounded-xl border border-synapse-border bg-synapse-elevated p-4">
+        <div key={item.label} className="rounded-xl border border-synapse-border bg-synapse-elevated p-4 shadow-sm">
           <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">{item.label}</p>
           <div className="mt-3 flex items-center justify-between gap-3">
             <p className="text-2xl font-semibold text-synapse-text">{item.value}</p>
@@ -91,7 +91,7 @@ export function SimpleList({
   return (
     <div className="grid gap-3">
       {items.map((item) => (
-        <div key={`${item.title}-${item.meta ?? ""}`} className="rounded-xl border border-synapse-border bg-synapse-elevated p-4">
+        <div key={`${item.title}-${item.meta ?? ""}`} className="rounded-xl border border-synapse-border bg-synapse-elevated p-4 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-body font-medium text-synapse-text">{item.title}</p>
@@ -114,13 +114,16 @@ export function StepStrip({
   current: number;
 }) {
   return (
-    <div className="grid gap-3 md:grid-cols-3">
+    <div
+      className="grid gap-3"
+      style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}
+    >
       {steps.map((step, index) => {
         const tone =
           index < current ? "success" : index === current ? "info" : "neutral";
 
         return (
-          <div key={step} className="rounded-xl border border-synapse-border bg-synapse-elevated p-4">
+          <div key={step} className="rounded-xl border border-synapse-border bg-synapse-elevated p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <p className="text-body font-medium text-synapse-text">{step}</p>
               <StatusBadge tone={tone}>{index + 1}</StatusBadge>

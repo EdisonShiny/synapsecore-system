@@ -3,18 +3,18 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
-  --page-background: #0B1220;
-  --card-background: #111827;
-  --elevated-panel: #0F172A;
-  --primary-blue: #2563EB;
-  --secondary-blue: #60A5FA;
-  --primary-text: #F9FAFB;
-  --secondary-text: #9CA3AF;
-  --border: #1F2937;
-  --success: #10B981;
-  --warning: #F59E0B;
-  --error: #EF4444;
+  color-scheme: light;
+  --page-background: #EEF4FB;
+  --card-background: #FFFFFF;
+  --elevated-panel: #F7FAFC;
+  --primary-blue: #1D4ED8;
+  --secondary-blue: #0F766E;
+  --primary-text: #0F172A;
+  --secondary-text: #64748B;
+  --border: #D7E3F1;
+  --success: #15803D;
+  --warning: #B45309;
+  --error: #B91C1C;
 }
 
 * {
@@ -23,9 +23,13 @@
 
 body {
   margin: 0;
-  background: var(--page-background);
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(29, 78, 216, 0.10), transparent 28%),
+    radial-gradient(circle at top right, rgba(15, 118, 110, 0.12), transparent 24%),
+    linear-gradient(180deg, #F8FBFF 0%, var(--page-background) 42%, #EAF1F9 100%);
   color: var(--primary-text);
-  font-family: Inter, Manrope, Poppins, ui-sans-serif, system-ui, sans-serif;
+  font-family: Manrope, Inter, Poppins, ui-sans-serif, system-ui, sans-serif;
 }
 
 button,
@@ -36,13 +40,13 @@ textarea {
 }
 
 ::selection {
-  background: rgba(37, 99, 235, 0.45);
-  color: #F9FAFB;
+  background: rgba(29, 78, 216, 0.18);
+  color: #0F172A;
 }
 
 @layer components {
   .synapse-focus {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-synapse-secondary focus-visible:ring-offset-2 focus-visible:ring-offset-synapse-page;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-synapse-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-synapse-page;
   }
 
   .synapse-panel {

@@ -11,21 +11,21 @@ const config: Config = {
     extend: {
       colors: {
         synapse: {
-          page: "#0B1220",
-          card: "#111827",
-          elevated: "#0F172A",
-          primary: "#2563EB",
-          secondary: "#60A5FA",
-          text: "#F9FAFB",
-          muted: "#9CA3AF",
-          border: "#1F2937",
-          success: "#10B981",
-          warning: "#F59E0B",
-          error: "#EF4444"
+          page: "#EEF4FB",
+          card: "#FFFFFF",
+          elevated: "#F7FAFC",
+          primary: "#1D4ED8",
+          secondary: "#0F766E",
+          text: "#0F172A",
+          muted: "#64748B",
+          border: "#D7E3F1",
+          success: "#15803D",
+          warning: "#B45309",
+          error: "#B91C1C"
         }
       },
       fontFamily: {
-        sans: ["Inter", "Manrope", "Poppins", "ui-sans-serif", "system-ui", "sans-serif"]
+        sans: ["Manrope", "Inter", "Poppins", "ui-sans-serif", "system-ui", "sans-serif"]
       },
       fontSize: {
         "page-title": ["30px", { lineHeight: "38px", fontWeight: "600" }],
@@ -35,8 +35,8 @@ const config: Config = {
         meta: ["12px", { lineHeight: "18px", fontWeight: "400" }]
       },
       boxShadow: {
-        soft: "0 18px 60px rgba(0, 0, 0, 0.28)",
-        panel: "0 12px 36px rgba(0, 0, 0, 0.22)"
+        soft: "0 22px 52px rgba(15, 23, 42, 0.12)",
+        panel: "0 14px 34px rgba(15, 23, 42, 0.08)"
       },
       borderRadius: {
         xl: "0.75rem",

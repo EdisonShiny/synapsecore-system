@@ -5,11 +5,11 @@ import type { ApprovalStatus, UserRole } from "@/types/common";
 import type { ConfidenceLevel, StatusTone } from "@/types/synapse";
 
 const toneMap: Record<StatusTone, string> = {
-  success: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
-  warning: "border-amber-400/30 bg-amber-400/10 text-amber-300",
-  error: "border-red-400/30 bg-red-400/10 text-red-300",
-  info: "border-blue-400/30 bg-blue-400/10 text-blue-300",
-  neutral: "border-synapse-border bg-synapse-elevated text-synapse-muted"
+  success: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  warning: "border-amber-200 bg-amber-50 text-amber-700",
+  error: "border-red-200 bg-red-50 text-red-700",
+  info: "border-blue-200 bg-blue-50 text-blue-700",
+  neutral: "border-synapse-border bg-slate-50 text-synapse-muted"
 };
 
 const approvalTone: Record<ApprovalStatus, StatusTone> = {

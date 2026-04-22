@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components";
-import { GuardedPageState, MetricGrid, Panel, SimpleList } from "@/components/app-pages/ui";
+import { GuardedPageState, MetricGrid, Panel, SimpleList, StepStrip } from "@/components/app-pages/ui";
 import { apiRequest } from "@/src/client/api";
 import { useDemoSession } from "@/src/client/use-demo-session";
 import type { Approval, Branch, DashboardActivity, DashboardAlert, DashboardSummary, Project } from "@/types";
@@ -120,6 +120,35 @@ export function DashboardPageClient() {
                   { label: "Completed", value: summary.completed_projects, tone: "success" }
                 ]}
               />
+            </Panel>
+            <Panel
+              title="Workflow path"
+              description="This matches the core requirement: the system takes messy input, reasons across steps, validates risk, gets approval, and tracks execution."
+            >
+              <StepStrip
+                steps={["Input", "Project", "Plan", "Validate", "Approve", "Execute", "Improve"]}
+                current={-1}
+              />
+              <div className="grid gap-3 xl:grid-cols-3">
+                <div className="rounded-xl border border-synapse-border bg-synapse-elevated p-4 shadow-sm">
+                  <p className="text-card-title text-synapse-text">AI is the decision engine</p>
+                  <p className="mt-2 text-body text-synapse-muted">
+                    Unstructured branch inputs are analyzed into projects, plans, and next actions.
+                  </p>
+                </div>
+                <div className="rounded-xl border border-synapse-border bg-synapse-elevated p-4 shadow-sm">
+                  <p className="text-card-title text-synapse-text">Validation reduces risk</p>
+                  <p className="mt-2 text-body text-synapse-muted">
+                    Plans are checked before approval so ambiguity, missing data, and low confidence are visible.
+                  </p>
+                </div>
+                <div className="rounded-xl border border-synapse-border bg-synapse-elevated p-4 shadow-sm">
+                  <p className="text-card-title text-synapse-text">State is tracked end to end</p>
+                  <p className="mt-2 text-body text-synapse-muted">
+                    Each project keeps its phase, approval, execution update, and reporting trail in one workflow.
+                  </p>
+                </div>
+              </div>
             </Panel>
             <Panel title="What needs attention" description="Handle these first so projects keep moving.">
               <SimpleList

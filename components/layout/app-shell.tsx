@@ -33,15 +33,17 @@ export function AppSidebar({
   collapsed?: boolean;
 }) {
   return (
-    <aside className={cn("hidden min-h-screen border-r border-synapse-border bg-synapse-elevated p-4 lg:block", collapsed ? "w-20" : "w-64")}>
-      <div className="mb-6 flex items-center gap-3 px-2">
-        <div className="grid h-10 w-10 place-items-center rounded-xl bg-synapse-primary text-card-title text-white">SC</div>
-        {!collapsed ? (
-          <div>
-            <p className="text-card-title text-synapse-text">SynapseCore System</p>
-            <p className="text-meta text-synapse-muted">Simple workflow demo</p>
-          </div>
-        ) : null}
+    <aside className={cn("hidden min-h-screen border-r border-synapse-border/80 bg-white/80 p-4 backdrop-blur lg:block", collapsed ? "w-20" : "w-72")}>
+      <div className="mb-6 rounded-2xl border border-synapse-border bg-synapse-elevated p-3 shadow-sm">
+        <div className="flex items-center gap-3 px-1">
+          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-synapse-primary text-card-title text-white shadow-sm">SC</div>
+          {!collapsed ? (
+            <div>
+              <p className="text-card-title text-synapse-text">SynapseCore System</p>
+              <p className="text-meta text-synapse-muted">AI workflow control center</p>
+            </div>
+          ) : null}
+        </div>
       </div>
       <nav className="grid gap-2" aria-label="Primary navigation">
         {navItems.map(({ label, icon: Icon, href }) => {
@@ -51,10 +53,10 @@ export function AppSidebar({
               key={label}
               href={href}
               className={cn(
-                "synapse-focus flex min-h-11 items-center gap-3 rounded-xl px-3 text-left text-body transition",
+                "synapse-focus flex min-h-11 items-center gap-3 rounded-xl border px-3 text-left text-body transition",
                 selected
-                  ? "bg-synapse-primary text-white shadow-panel"
-                  : "text-synapse-muted hover:bg-synapse-card hover:text-synapse-text"
+                  ? "border-blue-200 bg-blue-50 text-synapse-primary shadow-sm"
+                  : "border-transparent text-synapse-muted hover:border-synapse-border hover:bg-synapse-card hover:text-synapse-text"
               )}
             >
               <Icon className="h-5 w-5 shrink-0" />
@@ -63,6 +65,17 @@ export function AppSidebar({
           );
         })}
       </nav>
+      {!collapsed ? (
+        <div className="mt-6 rounded-2xl border border-synapse-border bg-synapse-elevated p-4 shadow-sm">
+          <p className="text-meta font-semibold uppercase tracking-[0.08em] text-synapse-secondary">
+            Demo focus
+          </p>
+          <p className="mt-2 text-body text-synapse-text">Input, plan, validate, approve, execute, improve.</p>
+          <p className="mt-2 text-meta text-synapse-muted">
+            Keep the AI decision path obvious for judges and users.
+          </p>
+        </div>
+      ) : null}
     </aside>
   );
 }
@@ -77,17 +90,19 @@ export function TopHeader({
   avatarInitials?: string;
 }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-synapse-border bg-synapse-page/90 px-4 py-4 backdrop-blur md:px-6">
+    <header className="sticky top-0 z-30 border-b border-synapse-border/80 bg-white/80 px-4 py-4 backdrop-blur md:px-6">
       <div className="flex items-center gap-4">
-        <button className="synapse-focus rounded-xl border border-synapse-border bg-synapse-elevated p-2 text-synapse-muted hover:text-white lg:hidden" type="button" aria-label="Open navigation">
+        <button className="synapse-focus rounded-xl border border-synapse-border bg-synapse-elevated p-2 text-synapse-muted hover:text-synapse-text lg:hidden" type="button" aria-label="Open navigation">
           <Menu className="h-5 w-5" />
         </button>
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-page-title text-synapse-text">{pageTitle}</h1>
-          <p className="mt-1 text-meta text-synapse-muted">Focus on the current step and move forward.</p>
+          <p className="mt-1 text-meta text-synapse-muted">
+            Clear workflow path: input, AI reasoning, validation, approval, execution, reporting.
+          </p>
         </div>
         <RoleBadge role={role} />
-        <div className="grid h-10 w-10 place-items-center rounded-full border border-synapse-border bg-synapse-card text-body font-semibold text-synapse-text">
+        <div className="grid h-10 w-10 place-items-center rounded-full border border-synapse-border bg-synapse-card text-body font-semibold text-synapse-text shadow-sm">
           {avatarInitials}
         </div>
       </div>
@@ -96,7 +111,7 @@ export function TopHeader({
 }
 
 export function PageContainer({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <main className={cn("mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 md:px-6", className)}>{children}</main>;
+  return <main className={cn("mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 md:px-6 xl:px-8", className)}>{children}</main>;
 }
 
 export function SectionBlock({
@@ -136,7 +151,7 @@ export function DetailDrawer({
   if (!open) return null;
 
   return (
-    <aside className="hidden w-96 border-l border-synapse-border bg-synapse-elevated p-5 xl:block">
+    <aside className="hidden w-96 border-l border-synapse-border bg-white/85 p-5 backdrop-blur xl:block">
       <h2 className="mb-4 text-section-title text-synapse-text">{title}</h2>
       {children}
     </aside>
