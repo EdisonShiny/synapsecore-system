@@ -14,6 +14,7 @@ import type {
   CreateOfficeInput,
   CreatePlanSubmissionInput,
   CreateProjectInput,
+  DemoAccountSummary,
   DashboardPayload,
   IssueThread,
   OfficeAccount,
@@ -21,6 +22,7 @@ import type {
   PlanInsight,
   ProjectDecisionInput,
   ProjectRecord,
+  PublicAuthStatus,
   ReplyIssueInput,
   SystemSession,
   UpdateOfficeInput,
@@ -97,10 +99,30 @@ export function createSessionForOffice(office: OfficeAccount): SystemSession {
 
 export function getPublicAuthStatus() {
   const store = getSystemStore();
-  return {
+  const accounts: DemoAccountSummary[] = [...store.offices]
+    .sort((left, right) => {
+      if (left.role !== right.role) {
+        return left.role === "HQ" ? -1 : 1;
+      }
+
+      return left.officeName.localeCompare(right.officeName);
+    })
+    .map((office) => ({
+      id: office.id,
+      officeName: office.officeName,
+      role: office.role,
+      email: office.email,
+      personInChargeName: office.personInChargeName,
+      location: office.location
+    }));
+
+  const status: PublicAuthStatus = {
     hqExists: store.offices.some((office) => office.role === "HQ"),
-    accountCount: store.offices.length
+    accountCount: store.offices.length,
+    accounts
   };
+
+  return status;
 }
 
 export function registerOffice(input: CreateOfficeInput) {

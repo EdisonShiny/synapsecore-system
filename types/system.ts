@@ -63,6 +63,17 @@ export type SystemSession = {
   user: OfficeAccount;
 };
 
+export type DemoAccountSummary = Pick<
+  OfficeAccount,
+  "id" | "officeName" | "role" | "email" | "personInChargeName" | "location"
+>;
+
+export type PublicAuthStatus = {
+  hqExists: boolean;
+  accountCount: number;
+  accounts: DemoAccountSummary[];
+};
+
 export type ProjectDecision = {
   decision: "Approved" | "Rejected";
   comments: string;

@@ -2,24 +2,23 @@
 
 import { type FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Mail, MapPin, User2 } from "lucide-react";
 import { FormField, PrimaryButton, SecondaryButton, SelectField } from "@/components";
 import { apiRequest } from "@/src/client/api";
 import { writeStoredSession, type DemoSession } from "@/src/client/session";
 import { TabsShell } from "@/components/ui/feedback";
-import type { CreateOfficeInput, OfficeRole } from "@/types/system";
+import { cn } from "@/lib/utils";
+import type { CreateOfficeInput, OfficeRole, PublicAuthStatus } from "@/types/system";
 
 const roleOptions: OfficeRole[] = ["HQ", "Branch Office"];
 
 export function AuthPage() {
   const router = useRouter();
   const [mode, setMode] = useState<"Sign In" | "Sign Up">("Sign In");
-  const [authStatus, setAuthStatus] = useState<{ hqExists: boolean; accountCount: number } | null>(null);
+  const [authStatus, setAuthStatus] = useState<PublicAuthStatus | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingAccountId, setLoadingAccountId] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [loginForm, setLoginForm] = useState({
-    email: "",
-    role: "Branch Office" as OfficeRole
-  });
   const [signupForm, setSignupForm] = useState<CreateOfficeInput>({
     officeName: "",
     role: "Branch Office",
@@ -36,13 +35,13 @@ export function AuthPage() {
 
     async function loadStatus() {
       try {
-        const data = await apiRequest<{ hqExists: boolean; accountCount: number }>("/api/auth/status");
+        const data = await apiRequest<PublicAuthStatus>("/api/auth/status");
         if (active) {
           setAuthStatus(data);
         }
       } catch {
         if (active) {
-          setAuthStatus({ hqExists: false, accountCount: 0 });
+          setAuthStatus({ hqExists: false, accountCount: 0, accounts: [] });
         }
       }
     }
@@ -60,24 +59,6 @@ export function AuthPage() {
     router.refresh();
   }
 
-  async function handleSignIn(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setLoading(true);
-    setError("");
-
-    try {
-      const session = await apiRequest<DemoSession>("/api/auth/login", {
-        method: "POST",
-        json: loginForm
-      });
-      await completeAuth(session);
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Sign in failed.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function handleSignUp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
@@ -93,6 +74,25 @@ export function AuthPage() {
       setError(submitError instanceof Error ? submitError.message : "Sign up failed.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function signInWithAccount(accountId: string, email: string, role: OfficeRole) {
+    setLoading(true);
+    setLoadingAccountId(accountId);
+    setError("");
+
+    try {
+      const session = await apiRequest<DemoSession>("/api/auth/login", {
+        method: "POST",
+        json: { email, role }
+      });
+      await completeAuth(session);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Sign in failed.");
+    } finally {
+      setLoading(false);
+      setLoadingAccountId(null);
     }
   }
 
@@ -120,35 +120,75 @@ export function AuthPage() {
         </div>
 
         {mode === "Sign In" ? (
-          <form className="mt-6 grid gap-4" onSubmit={handleSignIn}>
-            <FormField
-              label="Email"
-              type="email"
-              required
-              value={loginForm.email}
-              onChange={(event) => setLoginForm((current) => ({ ...current, email: event.target.value }))}
-            />
-            <SelectField
-              label="Role"
-              value={loginForm.role}
-              onChange={(event) =>
-                setLoginForm((current) => ({
-                  ...current,
-                  role: event.target.value as OfficeRole
-                }))
-              }
-            >
-              {roleOptions.map((role) => (
-                <option key={role} value={role}>
-                  {role}
-                </option>
-              ))}
-            </SelectField>
-            {error ? <p className="text-body text-synapse-error">{error}</p> : null}
-            <PrimaryButton loading={loading} type="submit">
-              Sign In
-            </PrimaryButton>
-          </form>
+          <div className="mt-6 grid gap-6">
+            <div className="grid gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-section-title text-synapse-text">Demo accounts</h2>
+                  <p className="mt-1 text-body text-synapse-muted">
+                    Use any registered account below for demos and presentations.
+                  </p>
+                </div>
+              </div>
+
+              {authStatus && authStatus.accounts.length > 0 ? (
+                <div className="grid gap-3">
+                  {authStatus.accounts.map((account) => {
+                    return (
+                      <div
+                        key={account.id}
+                        className={cn(
+                          "rounded-[22px] border bg-synapse-elevated/70 p-4 shadow-sm transition",
+                          loadingAccountId === account.id
+                            ? "border-synapse-primary ring-1 ring-synapse-primary/30"
+                            : "border-synapse-border"
+                        )}
+                      >
+                        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                          <div className="grid gap-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="rounded-full bg-white px-3 py-1 text-meta font-medium uppercase tracking-[0.08em] text-synapse-secondary shadow-sm">
+                                {account.role}
+                              </span>
+                              <span className="text-card-title text-synapse-text">{account.officeName}</span>
+                            </div>
+                            <div className="grid gap-2 text-body text-synapse-muted">
+                              <div className="flex items-center gap-2">
+                                <User2 className="h-4 w-4" />
+                                <span>{account.personInChargeName}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Mail className="h-4 w-4" />
+                                <span>{account.email}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <MapPin className="h-4 w-4" />
+                                <span>{account.location}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex flex-col gap-2 md:min-w-40">
+                            <PrimaryButton
+                              type="button"
+                              loading={loading && loadingAccountId === account.id}
+                              onClick={() => void signInWithAccount(account.id, account.email, account.role)}
+                            >
+                              Sign In
+                            </PrimaryButton>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-[22px] border border-dashed border-synapse-border bg-synapse-elevated/70 p-6 text-body text-synapse-muted">
+                  No accounts created yet. Create one in the Sign Up tab first.
+                </div>
+              )}
+              {error ? <p className="text-body text-synapse-error">{error}</p> : null}
+            </div>
+          </div>
         ) : (
           <form className="mt-6 grid gap-4" onSubmit={handleSignUp}>
             <div className="grid gap-4 md:grid-cols-2">

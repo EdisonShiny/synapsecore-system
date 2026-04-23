@@ -37,14 +37,24 @@ export function StatGrid({
 }: {
   items: Array<{ label: string; value: string | number; helper?: string; tone?: "success" | "warning" | "error" | "info" | "neutral" }>;
 }) {
+  const toneStyles: Record<NonNullable<(typeof items)[number]["tone"]>, string> = {
+    success: "bg-emerald-500",
+    warning: "bg-amber-500",
+    error: "bg-red-500",
+    info: "bg-blue-500",
+    neutral: "bg-slate-400"
+  };
+
   return (
     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
       {items.map((item) => (
         <div key={item.label} className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4 shadow-sm">
-          <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">{item.label}</p>
+          <div className="flex items-center gap-2">
+            {item.tone ? <span className={cn("h-2.5 w-2.5 rounded-full", toneStyles[item.tone])} aria-hidden /> : null}
+            <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">{item.label}</p>
+          </div>
           <div className="mt-3 flex items-start justify-between gap-3">
             <p className="text-[28px] font-semibold leading-none text-synapse-text">{item.value}</p>
-            {item.tone ? <StatusBadge tone={item.tone}>{item.label}</StatusBadge> : null}
           </div>
           {item.helper ? <p className="mt-3 text-body text-synapse-muted">{item.helper}</p> : null}
         </div>

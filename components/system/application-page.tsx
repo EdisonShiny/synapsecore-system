@@ -54,6 +54,7 @@ export function ApplicationPage() {
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [confirmDecisionOpen, setConfirmDecisionOpen] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
 
   const isHq = session?.user.role === "HQ";
   const tabs = isHq
@@ -223,14 +224,19 @@ export function ApplicationPage() {
     }
   }
 
-  function renderProjectCard(project: ProjectRecord) {
+  function openProjectDetail(projectId: string) {
+    setSelectedProjectId(projectId);
+    setDetailModalOpen(true);
+  }
+
+  function renderProjectCard(project: ProjectRecord, { selectable = false }: { selectable?: boolean } = {}) {
+    const selected = selectable && project.id === selectedProjectId;
+
     return (
-      <button
+      <div
         key={project.id}
-        type="button"
-        onClick={() => setSelectedProjectId(project.id)}
         className={`synapse-focus rounded-[22px] border p-4 text-left shadow-sm transition ${
-          project.id === selectedProjectId
+          selected
             ? "border-blue-200 bg-blue-50"
             : "border-synapse-border bg-synapse-elevated hover:border-blue-100 hover:bg-white"
         }`}
@@ -246,29 +252,42 @@ export function ApplicationPage() {
           </div>
         </div>
         <p className="mt-3 line-clamp-2 text-body text-synapse-muted">{project.description}</p>
-        <div className="mt-3 flex flex-wrap items-center gap-3 text-meta text-synapse-muted">
-          <span>{formatDateTime(project.updatedAt)}</span>
-          <span>{project.appealCount} appeal{project.appealCount === 1 ? "" : "s"}</span>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3 text-meta text-synapse-muted">
+            <span>{formatDateTime(project.updatedAt)}</span>
+            <span>{project.appealCount} appeal{project.appealCount === 1 ? "" : "s"}</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {selectable ? (
+              <SecondaryButton type="button" onClick={() => setSelectedProjectId(project.id)}>
+                {selected ? "Selected" : "Select"}
+              </SecondaryButton>
+            ) : null}
+            <PrimaryButton type="button" onClick={() => openProjectDetail(project.id)}>
+              View details
+            </PrimaryButton>
+          </div>
         </div>
-      </button>
+      </div>
     );
   }
 
   function renderProjectDetail(project: ProjectRecord | null) {
     if (!project) {
-      return (
-        <PageSection title="Project detail" description="Select a project to review the full branch report and AI reasoning.">
-          <p className="text-body text-synapse-muted">No project selected.</p>
-        </PageSection>
-      );
+      return <p className="text-body text-synapse-muted">No project selected.</p>;
     }
 
     return (
-      <PageSection
-        title={project.subject}
-        description={`Full report generated for ${project.branchOfficeName}.`}
-        action={<WorkflowStatusBadge status={project.status} />}
-      >
+      <div className="grid gap-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-section-title text-synapse-text">{project.subject}</p>
+            <p className="mt-1 text-body text-synapse-muted">
+              Full report generated for {project.branchOfficeName}.
+            </p>
+          </div>
+          <WorkflowStatusBadge status={project.status} />
+        </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
             <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Applicant information</p>
@@ -321,7 +340,7 @@ export function ApplicationPage() {
         </div>
 
         <AiTransparencyPanel insight={project.report.aiOutput} title="Project review AI workflow" />
-      </PageSection>
+      </div>
     );
   }
 
@@ -365,20 +384,17 @@ export function ApplicationPage() {
       ) : null}
 
       {activeTab === "Overview" ? (
-        <div className="grid gap-6 xl:grid-cols-2">
-          <PageSection
-            title={isHq ? "Latest decision queue" : "Latest branch projects"}
-            description={isHq ? "Projects can be filtered further in the review and list views." : "This summary reflects current branch application records."}
-          >
-            <RecordList
-              items={projects.slice(0, 5)}
-              emptyTitle="No project workflow yet"
-              emptyDescription={isHq ? "Branch submissions will appear here." : "Create the first application to start the workflow."}
-              renderItem={renderProjectCard}
-            />
-          </PageSection>
-          {renderProjectDetail(selectedProject)}
-        </div>
+        <PageSection
+          title={isHq ? "Latest decision queue" : "Latest branch projects"}
+          description={isHq ? "Open any project in a popup to review the full report." : "Open any project in a popup to review the full report."}
+        >
+          <RecordList
+            items={projects.slice(0, 5)}
+            emptyTitle="No project workflow yet"
+            emptyDescription={isHq ? "Branch submissions will appear here." : "Create the first application to start the workflow."}
+            renderItem={(project) => renderProjectCard(project)}
+          />
+        </PageSection>
       ) : null}
 
       {!isHq && activeTab === "Create Project" ? (
@@ -438,40 +454,37 @@ export function ApplicationPage() {
       ) : null}
 
       {activeTab === "View Projects" ? (
-        <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-          <PageSection
-            title="Project records"
-            description="Latest first, with status filters and full report visibility."
-          >
-            <div className="grid gap-3 md:grid-cols-2">
-              <SelectField label="Status filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}>
-                {statusFilters.map((filter) => (
-                  <option key={filter} value={filter}>
-                    {filter}
+        <PageSection
+          title="Project records"
+          description="Latest first, with status filters and popup detail view."
+        >
+          <div className="grid gap-3 md:grid-cols-2">
+            <SelectField label="Status filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}>
+              {statusFilters.map((filter) => (
+                <option key={filter} value={filter}>
+                  {filter}
+                </option>
+              ))}
+            </SelectField>
+            {isHq ? (
+              <SelectField label="Branch Office" value={branchFilter} onChange={(event) => setBranchFilter(event.target.value)}>
+                <option value="all">All Branch Offices</option>
+                {branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.officeName}
                   </option>
                 ))}
               </SelectField>
-              {isHq ? (
-                <SelectField label="Branch Office" value={branchFilter} onChange={(event) => setBranchFilter(event.target.value)}>
-                  <option value="all">All Branch Offices</option>
-                  {branches.map((branch) => (
-                    <option key={branch.id} value={branch.id}>
-                      {branch.officeName}
-                    </option>
-                  ))}
-                </SelectField>
-              ) : null}
-            </div>
-            {loading ? <p className="text-body text-synapse-muted">Loading projects...</p> : error ? <p className="text-body text-synapse-error">{error}</p> : null}
-            <RecordList
-              items={filteredProjects}
-              emptyTitle="No matching projects"
-              emptyDescription="Adjust the filters or create a new project submission."
-              renderItem={renderProjectCard}
-            />
-          </PageSection>
-          {renderProjectDetail(selectedProject)}
-        </div>
+            ) : null}
+          </div>
+          {loading ? <p className="text-body text-synapse-muted">Loading projects...</p> : error ? <p className="text-body text-synapse-error">{error}</p> : null}
+          <RecordList
+            items={filteredProjects}
+            emptyTitle="No matching projects"
+            emptyDescription="Adjust the filters or create a new project submission."
+            renderItem={(project) => renderProjectCard(project)}
+          />
+        </PageSection>
       ) : null}
 
       {isHq && activeTab === "Review Project" ? (
@@ -484,16 +497,30 @@ export function ApplicationPage() {
               items={projects.filter((project) => project.status === "Waiting for Approval")}
               emptyTitle="No projects waiting for approval"
               emptyDescription="Branch appeals and new submissions will return here."
-              renderItem={renderProjectCard}
+              renderItem={(project) => renderProjectCard(project, { selectable: true })}
             />
           </PageSection>
           <PageSection
             title="Decision panel"
-            description="The decision is written back to the branch result and keeps any HQ comments attached to the record."
+            description="Select a project, review it in a popup, then submit the HQ decision."
           >
             {selectedProject ? (
               <div className="grid gap-4">
-                {renderProjectDetail(selectedProject)}
+                <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <p className="text-card-title text-synapse-text">{selectedProject.subject}</p>
+                      <p className="mt-1 text-body text-synapse-muted">{selectedProject.branchOfficeName}</p>
+                      <p className="mt-3 text-meta text-synapse-muted">{formatDateTime(selectedProject.updatedAt)}</p>
+                    </div>
+                    <div className="flex flex-col items-start gap-2 md:items-end">
+                      <WorkflowStatusBadge status={selectedProject.status} />
+                      <SecondaryButton type="button" onClick={() => openProjectDetail(selectedProject.id)}>
+                        View details
+                      </SecondaryButton>
+                    </div>
+                  </div>
+                </div>
                 <div className="grid gap-4 rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
                   <SelectField label="Decision" value={decision} onChange={(event) => setDecision(event.target.value as typeof decision)}>
                     <option value="Approved">Approved</option>
@@ -527,7 +554,7 @@ export function ApplicationPage() {
               items={rejectedProjects}
               emptyTitle="No rejected projects"
               emptyDescription="Rejected items will appear here and can be re-submitted with updated detail."
-              renderItem={renderProjectCard}
+              renderItem={(project) => renderProjectCard(project, { selectable: true })}
             />
           </PageSection>
           <PageSection
@@ -604,6 +631,15 @@ export function ApplicationPage() {
             </SecondaryButton>
           </div>
         </div>
+      </ModalDialog>
+
+      <ModalDialog
+        open={detailModalOpen}
+        title="Project details"
+        onClose={() => setDetailModalOpen(false)}
+        panelClassName="max-w-5xl max-h-[90vh] overflow-y-auto"
+      >
+        {renderProjectDetail(selectedProject)}
       </ModalDialog>
     </AppShell>
   );

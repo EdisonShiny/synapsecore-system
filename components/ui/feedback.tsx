@@ -37,18 +37,20 @@ export function ModalDialog({
   open,
   title,
   children,
-  onClose
+  onClose,
+  panelClassName
 }: {
   open: boolean;
   title: string;
   children: React.ReactNode;
   onClose: () => void;
+  panelClassName?: string;
 }) {
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/25 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
-      <div className="w-full max-w-lg rounded-2xl border border-synapse-border bg-synapse-card p-6 shadow-soft">
+      <div className={cn("w-full max-w-lg rounded-2xl border border-synapse-border bg-synapse-card p-6 shadow-soft", panelClassName)}>
         <div className="mb-5 flex items-center justify-between gap-4">
           <h2 className="text-section-title text-synapse-text">{title}</h2>
           <button className="synapse-focus rounded-xl p-2 text-synapse-muted hover:bg-synapse-elevated hover:text-synapse-text" onClick={onClose} aria-label="Close modal">
