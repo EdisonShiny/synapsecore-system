@@ -1,5 +1,5 @@
-import { CreateProjectPageClient } from "@/components/app-pages/create-project-page";
+import { redirect } from "next/navigation";
 
 export default function CreateProjectPage() {
-  return <CreateProjectPageClient />;
+  redirect("/application");
 }

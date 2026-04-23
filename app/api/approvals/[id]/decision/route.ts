@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
-import { decideApproval } from "@/src/modules/approvals/service";
+import { decideProject } from "@/src/modules/system/service";
 import { fail, ok } from "@/src/utils/api";
-import { getSession } from "@/src/utils/auth";
-import type { ApprovalStatus } from "@/types";
+import { getSystemSession } from "@/src/utils/system-auth";
+import type { ProjectDecisionInput } from "@/types/system";
 
 type RouteContext = {
   params: {
@@ -12,18 +12,18 @@ type RouteContext = {
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
   try {
-    const { user } = getSession(request);
+    const { user } = getSystemSession(request);
     const body = (await request.json()) as {
-      status?: ApprovalStatus;
-      decision_note?: string | null;
+      decision?: "Approved" | "Rejected";
+      comments?: string;
     };
 
-    if (!body.status) {
-      return fail("Failed to decide approval", ["status is required."]);
+    if (!body.decision) {
+      return fail("Failed to decide approval", ["decision is required."]);
     }
 
-    const approval = decideApproval(params.id, { status: body.status, decision_note: body.decision_note ?? null }, user);
-    return ok("Approval decision recorded successfully", { approval });
+    const project = decideProject(user, params.id, body as ProjectDecisionInput);
+    return ok("Approval decision recorded successfully", { project });
   } catch (error) {
     return fail("Failed to decide approval", [error instanceof Error ? error.message : "Unknown error"], 400);
   }

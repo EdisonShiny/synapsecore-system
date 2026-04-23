@@ -1,5 +1,5 @@
-import { DashboardPageClient } from "@/components/app-pages/dashboard-page";
+import { DashboardPage as DashboardPageView } from "@/components/system/dashboard-page";
 
 export default function DashboardPage() {
-  return <DashboardPageClient />;
+  return <DashboardPageView />;
 }

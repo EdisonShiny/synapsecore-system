@@ -1,5 +1,5 @@
-import { ValidationCenterPageClient } from "@/components/app-pages/validation-center-page";
+import { redirect } from "next/navigation";
 
 export default function ValidationCenterPage() {
-  return <ValidationCenterPageClient />;
+  redirect("/plan-validate");
 }

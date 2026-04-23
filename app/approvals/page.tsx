@@ -1,5 +1,5 @@
-import { ApprovalsPageClient } from "@/components/app-pages/approvals-page";
+import { redirect } from "next/navigation";
 
 export default function ApprovalsPage() {
-  return <ApprovalsPageClient />;
+  redirect("/application");
 }

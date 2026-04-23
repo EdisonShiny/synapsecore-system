@@ -1,32 +1,19 @@
 "use client";
 
-import type { User } from "@/types";
+import type { SystemSession } from "@/types/system";
 
-const SESSION_STORAGE_KEY = "synapsecore-demo-session";
+const SESSION_STORAGE_KEY = "synapsecore-system-session";
 
-export type DemoSession = {
-  token: string;
-  user: User;
-};
+export type DemoSession = SystemSession;
 
 export const DEMO_LOGIN_OPTIONS = [
   {
-    email: "north.branch@synapsecore.local",
+    email: "",
     role: "Branch Office" as const,
-    label: "North Branch"
+    label: "Branch Office"
   },
   {
-    email: "south.branch@synapsecore.local",
-    role: "Branch Office" as const,
-    label: "South Branch"
-  },
-  {
-    email: "central.branch@synapsecore.local",
-    role: "Branch Office" as const,
-    label: "Central Branch"
-  },
-  {
-    email: "hq@synapsecore.local",
+    email: "",
     role: "HQ" as const,
     label: "HQ"
   }

@@ -1,9 +1,9 @@
-import { ProjectDetailPageClient } from "@/components/app-pages/project-detail-page";
+import { redirect } from "next/navigation";
 
 export default function ProjectDetailPage({
   params
 }: {
   params: { id: string };
 }) {
-  return <ProjectDetailPageClient projectId={params.id} />;
+  redirect(`/application?projectId=${params.id}`);
 }

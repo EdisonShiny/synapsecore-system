@@ -1,9 +1,10 @@
-import { AiWorkflowPageClient } from "@/components/app-pages/ai-workflow-page";
+import { redirect } from "next/navigation";
 
 export default function AiWorkflowPage({
   searchParams
 }: {
   searchParams?: { projectId?: string };
 }) {
-  return <AiWorkflowPageClient initialProjectId={searchParams?.projectId ?? ""} />;
+  const nextTarget = searchParams?.projectId ? `/plan-validate?projectId=${searchParams.projectId}` : "/plan-validate";
+  redirect(nextTarget);
 }

@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
-import { getProjectById, updateProject } from "@/src/modules/projects/service";
+import { getProjectForOffice, submitProjectAppeal } from "@/src/modules/system/service";
 import { fail, ok } from "@/src/utils/api";
-import { getSession } from "@/src/utils/auth";
-import type { Project } from "@/types";
+import { getSystemSession } from "@/src/utils/system-auth";
+import type { AppealProjectInput } from "@/types/system";
 
 type RouteContext = {
   params: {
@@ -12,8 +12,9 @@ type RouteContext = {
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
-    const { user } = getSession(request);
-    return ok("Project fetched successfully", { project: getProjectById(params.id, user) });
+    const { user } = getSystemSession(request);
+    const project = getProjectForOffice(params.id, user);
+    return ok("Project fetched successfully", { project });
   } catch (error) {
     return fail("Failed to fetch project", [error instanceof Error ? error.message : "Unknown error"], 404);
   }
@@ -21,10 +22,19 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
   try {
-    const { user } = getSession(request);
-    const body = (await request.json()) as Partial<Omit<Project, "id" | "created_at">>;
-    return ok("Project updated successfully", { project: updateProject(params.id, body, user) });
+    const { user } = getSystemSession(request);
+    const body = (await request.json()) as {
+      action?: "appeal";
+      payload?: AppealProjectInput;
+    };
+
+    if (body.action !== "appeal" || !body.payload) {
+      return fail("Project update failed", ["Unsupported project action."]);
+    }
+
+    const project = submitProjectAppeal(user, params.id, body.payload);
+    return ok("Project appeal submitted successfully", { project });
   } catch (error) {
-    return fail("Failed to update project", [error instanceof Error ? error.message : "Unknown error"], 400);
+    return fail("Project update failed", [error instanceof Error ? error.message : "Unknown error"], 400);
   }
 }

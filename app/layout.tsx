@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "SynapseCore System",
-  description: "Design system foundation for SynapseCore System"
+  description: "Internal HQ and Branch Office coordination platform"
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

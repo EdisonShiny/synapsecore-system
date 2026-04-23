@@ -1,12 +1,12 @@
 import type { NextRequest } from "next/server";
-import { listBranches } from "@/src/modules/branches/service";
+import { listBranchOffices } from "@/src/modules/system/service";
 import { fail, ok } from "@/src/utils/api";
-import { getSession } from "@/src/utils/auth";
+import { getSystemSession } from "@/src/utils/system-auth";
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = getSession(request);
-    return ok("Branches fetched successfully", { branches: listBranches(user) });
+    getSystemSession(request);
+    return ok("Branches fetched successfully", { branches: listBranchOffices() });
   } catch (error) {
     return fail(
       "Failed to fetch branches",
