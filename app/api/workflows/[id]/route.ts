@@ -5,15 +5,16 @@ import { getSystemSession } from "@/src/utils/system-auth";
 import type { UpdateWorkflowInput } from "@/types/system";
 
 type RouteContext = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
     const { user } = getSystemSession(request);
-    return ok("Workflow fetched successfully", getWorkflowDetailForOffice(user, params.id));
+    const { id } = await params;
+    return ok("Workflow fetched successfully", getWorkflowDetailForOffice(user, id));
   } catch (error) {
     return fail("Failed to fetch workflow", [error instanceof Error ? error.message : "Unknown error"], 404);
   }
@@ -22,8 +23,9 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
   try {
     const { user } = getSystemSession(request);
+    const { id } = await params;
     const body = (await request.json()) as UpdateWorkflowInput;
-    const workflow = updateWorkflow(user, params.id, body);
+    const workflow = updateWorkflow(user, id, body);
     return ok("Workflow updated successfully", { workflow });
   } catch (error) {
     return fail("Workflow update failed", [error instanceof Error ? error.message : "Unknown error"], 400);

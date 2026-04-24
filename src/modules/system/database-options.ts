@@ -1,4 +1,4 @@
-import type { CompanyDatabase, DatabaseAttachmentOption } from "@/types/system";
+import type { CompanyDatabase, CustomDatabaseNode, DatabaseAttachmentOption } from "@/types/system";
 
 export const databaseAttachmentOptions: DatabaseAttachmentOption[] = [
   {
@@ -35,8 +35,24 @@ export const databaseAttachmentOptions: DatabaseAttachmentOption[] = [
     path: "company.procurementRecords.yearly",
     label: "Procurement Yearly",
     description: "Yearly procurement records."
+  },
+  {
+    path: "company.customTree",
+    label: "Custom Database Tree",
+    description: "User-added structured fields and branches."
   }
 ];
+
+function summarizeCustomNode(node: CustomDatabaseNode): string {
+  const ownValue = node.value ? `${node.label}: ${node.value}` : node.label;
+  const childValues = node.children.map(summarizeCustomNode).filter(Boolean);
+
+  if (childValues.length === 0) {
+    return ownValue;
+  }
+
+  return `${ownValue} -> ${childValues.join("; ")}`;
+}
 
 export function getDatabaseSelectionSummary(company: CompanyDatabase, path: string) {
   switch (path) {
@@ -66,6 +82,8 @@ export function getDatabaseSelectionSummary(company: CompanyDatabase, path: stri
       return company.procurementRecords.yearly
         .map((record) => `${record.period}: ${record.value} (${record.note})`)
         .join(" | ");
+    case "company.customTree":
+      return company.customTree.map(summarizeCustomNode).join(" | ");
     default:
       return "";
   }

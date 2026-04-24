@@ -30,7 +30,7 @@ import {
   type ValidationInner,
   type ValidationOutput
 } from "@/src/modules/ai";
-import { runtimeConfig, shouldUseMockAi } from "@/src/config/runtime";
+import { resolveChatCompletionsEndpoint, runtimeConfig, shouldUseMockAi } from "@/src/config/runtime";
 import { nowIso, plusDays } from "@/src/utils/date";
 import { createId } from "@/src/utils/id";
 
@@ -574,7 +574,7 @@ async function executeAiModule<TModule extends AiModule>(
 }
 
 async function requestAiJson(messages: Array<{ role: "system" | "user"; content: string }>) {
-  const response = await fetch(runtimeConfig.aiEndpoint, {
+  const response = await fetch(resolveChatCompletionsEndpoint(runtimeConfig.aiEndpoint), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

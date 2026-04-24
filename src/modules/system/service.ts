@@ -27,6 +27,8 @@ import type {
   AttachmentReference,
   DatabasePayload,
   CreateIssueInput,
+  CreateCustomDatabaseNodeInput,
+  CustomDatabaseNode,
   CreateOfficeInput,
   CreatePlanSubmissionInput,
   CreateProjectInput,
@@ -51,6 +53,7 @@ import type {
   SystemSession,
   SystemSettingsPayload,
   UpdateRequestPromptConfigInput,
+  UpdateCustomDatabaseNodeInput,
   UpdateWorkflowInput,
   UpdateSystemAiConfigInput,
   UpdateOfficeInput,
@@ -1889,6 +1892,81 @@ export function getCompanyDatabase(): DatabasePayload {
       }
     }
   };
+}
+
+function findCustomDatabaseNode(nodes: CustomDatabaseNode[], nodeId: string): CustomDatabaseNode | null {
+  for (const node of nodes) {
+    if (node.id === nodeId) {
+      return node;
+    }
+
+    const child = findCustomDatabaseNode(node.children, nodeId);
+
+    if (child) {
+      return child;
+    }
+  }
+
+  return null;
+}
+
+export function addCustomDatabaseNode(input: CreateCustomDatabaseNodeInput): DatabasePayload {
+  const store = getSystemStore();
+  const label = sanitizeText(input.label);
+  const value = sanitizeText(input.value ?? "");
+
+  if (!label) {
+    throw new Error("Database field name is required.");
+  }
+
+  const timestamp = nowIso();
+  const node = {
+    id: createId(),
+    label,
+    value,
+    children: [],
+    createdAt: timestamp,
+    updatedAt: timestamp
+  };
+
+  if (input.parentId) {
+    const parent = findCustomDatabaseNode(store.companyDatabase.customTree, input.parentId);
+
+    if (!parent) {
+      throw new Error("Parent database branch was not found.");
+    }
+
+    parent.children.push(node);
+    parent.updatedAt = timestamp;
+  } else {
+    store.companyDatabase.customTree.push(node);
+  }
+
+  saveSystemStore(store);
+  return getCompanyDatabase();
+}
+
+export function updateCustomDatabaseNode(input: UpdateCustomDatabaseNodeInput): DatabasePayload {
+  const store = getSystemStore();
+  const label = sanitizeText(input.label);
+  const value = sanitizeText(input.value);
+
+  if (!label) {
+    throw new Error("Database field name is required.");
+  }
+
+  const node = findCustomDatabaseNode(store.companyDatabase.customTree, input.id);
+
+  if (!node) {
+    throw new Error("Database field was not found.");
+  }
+
+  node.label = label;
+  node.value = value;
+  node.updatedAt = nowIso();
+  saveSystemStore(store);
+
+  return getCompanyDatabase();
 }
 
 export function getSystemSettings(): SystemSettingsPayload {

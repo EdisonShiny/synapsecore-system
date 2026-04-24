@@ -1,10 +1,14 @@
 import { redirect } from "next/navigation";
 
-export default function AiWorkflowPage({
+export default async function AiWorkflowPage({
   searchParams
 }: {
-  searchParams?: { projectId?: string };
+  searchParams: Promise<{ projectId?: string }>;
 }) {
-  const nextTarget = searchParams?.projectId ? `/plan-validate?projectId=${searchParams.projectId}` : "/plan-validate";
+  const resolvedSearchParams = await searchParams;
+  const nextTarget = resolvedSearchParams.projectId
+    ? `/plan-validate?projectId=${resolvedSearchParams.projectId}`
+    : "/plan-validate";
+
   redirect(nextTarget);
 }

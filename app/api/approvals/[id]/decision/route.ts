@@ -5,14 +5,15 @@ import { getSystemSession } from "@/src/utils/system-auth";
 import type { ProjectDecisionInput } from "@/types/system";
 
 type RouteContext = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
   try {
     const { user } = getSystemSession(request);
+    const { id } = await params;
     const body = (await request.json()) as {
       decision?: "Approved" | "Rejected";
       comments?: string;
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       return fail("Failed to decide approval", ["decision is required."]);
     }
 
-    const project = decideProject(user, params.id, body as ProjectDecisionInput);
+    const project = decideProject(user, id, body as ProjectDecisionInput);
     return ok("Approval decision recorded successfully", { project });
   } catch (error) {
     return fail("Failed to decide approval", [error instanceof Error ? error.message : "Unknown error"], 400);

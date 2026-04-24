@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AppShell } from "@/components";
+import { Plus, Save } from "lucide-react";
+import { AppShell, FormField, PrimaryButton, SecondaryButton, TextAreaField } from "@/components";
 import { apiRequest } from "@/src/client/api";
 import { useDemoSession } from "@/src/client/use-demo-session";
 import { EmptyBlock, PageSection } from "@/components/system/ui";
-import type { DatabasePayload } from "@/types/system";
+import type {
+  CreateCustomDatabaseNodeInput,
+  CustomDatabaseNode,
+  DatabasePayload,
+  UpdateCustomDatabaseNodeInput
+} from "@/types/system";
 
 function TreeBlock({
   title,
@@ -36,11 +42,80 @@ function RecordList({
   return <div className="grid gap-2">{items.map(render)}</div>;
 }
 
+function flattenCustomNodes(nodes: CustomDatabaseNode[], depth = 0): Array<{ id: string; label: string; depth: number }> {
+  return nodes.flatMap((node) => [
+    { id: node.id, label: node.label, depth },
+    ...flattenCustomNodes(node.children, depth + 1)
+  ]);
+}
+
+function CustomTreeNode({
+  node,
+  onUpdate
+}: {
+  node: CustomDatabaseNode;
+  onUpdate: (input: UpdateCustomDatabaseNodeInput) => Promise<void>;
+}) {
+  const [label, setLabel] = useState(node.label);
+  const [value, setValue] = useState(node.value);
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+
+    try {
+      await onUpdate({ id: node.id, label, value });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="grid gap-3 rounded-[18px] border border-synapse-border bg-white p-3">
+      <div className="grid gap-3 md:grid-cols-[0.8fr_1.2fr_auto] md:items-end">
+        <FormField
+          label="Field or branch"
+          value={label}
+          onChange={(event) => setLabel(event.target.value)}
+        />
+        <TextAreaField
+          label="Value"
+          className="min-h-20"
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          placeholder="Structured value, note, metric, or summary"
+        />
+        <SecondaryButton
+          type="button"
+          icon={<Save className="h-4 w-4" />}
+          loading={saving}
+          onClick={handleSave}
+        >
+          Save
+        </SecondaryButton>
+      </div>
+
+      {node.children.length > 0 ? (
+        <div className="ml-4 grid gap-3 border-l border-synapse-border pl-4">
+          {node.children.map((child) => (
+            <CustomTreeNode key={child.id} node={child} onUpdate={onUpdate} />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function DatabasePage() {
   const { session, loading: sessionLoading, signOut } = useDemoSession();
   const [database, setDatabase] = useState<DatabasePayload | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [feedback, setFeedback] = useState("");
+  const [parentId, setParentId] = useState("");
+  const [newLabel, setNewLabel] = useState("");
+  const [newValue, setNewValue] = useState("");
 
   useEffect(() => {
     if (!session) {
@@ -81,6 +156,63 @@ export function DatabasePage() {
     return null;
   }
 
+  const customNodeOptions = database ? flattenCustomNodes(database.company.customTree) : [];
+
+  async function addCustomNode() {
+    if (!session) {
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    setFeedback("");
+
+    try {
+      const input: CreateCustomDatabaseNodeInput = {
+        parentId: parentId || null,
+        label: newLabel,
+        value: newValue
+      };
+      const data = await apiRequest<DatabasePayload>("/api/database", {
+        method: "POST",
+        session,
+        json: input
+      });
+
+      setDatabase(data);
+      setParentId("");
+      setNewLabel("");
+      setNewValue("");
+      setFeedback("Database field added.");
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Failed to add database field.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function updateCustomNode(input: UpdateCustomDatabaseNodeInput) {
+    if (!session) {
+      return;
+    }
+
+    setError("");
+    setFeedback("");
+
+    try {
+      const data = await apiRequest<DatabasePayload>("/api/database", {
+        method: "PATCH",
+        session,
+        json: input
+      });
+
+      setDatabase(data);
+      setFeedback("Database field updated.");
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Failed to update database field.");
+    }
+  }
+
   return (
     <AppShell
       session={session}
@@ -90,6 +222,7 @@ export function DatabasePage() {
     >
       {loading ? <p className="text-body text-synapse-muted">Loading database tree...</p> : null}
       {error ? <p className="text-body text-synapse-error">{error}</p> : null}
+      {feedback ? <p className="text-body text-synapse-secondary">{feedback}</p> : null}
 
       {!loading && !error && !database ? (
         <PageSection title="Database unavailable">
@@ -193,6 +326,66 @@ export function DatabasePage() {
                     />
                   </div>
                 </div>
+              </div>
+            </TreeBlock>
+
+            <TreeBlock title="Custom structured fields">
+              <div className="grid gap-4">
+                <div className="grid gap-3 rounded-[18px] border border-synapse-border bg-synapse-elevated p-4">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <label className="grid gap-2 text-body">
+                      <span className="font-medium text-synapse-text">Parent branch</span>
+                      <select
+                        className="synapse-focus w-full rounded-xl border border-synapse-border bg-white px-3 py-2.5 text-body text-synapse-text shadow-sm transition hover:border-synapse-primary/60 focus:border-synapse-primary"
+                        value={parentId}
+                        onChange={(event) => setParentId(event.target.value)}
+                      >
+                        <option value="">Company custom tree</option>
+                        {customNodeOptions.map((option) => (
+                          <option key={option.id} value={option.id}>
+                            {" ".repeat(option.depth * 2)}{option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <FormField
+                      label="Field or branch name"
+                      value={newLabel}
+                      onChange={(event) => setNewLabel(event.target.value)}
+                      placeholder="Example: Supplier risk"
+                    />
+                  </div>
+                  <TextAreaField
+                    label="Value"
+                    className="min-h-24"
+                    value={newValue}
+                    onChange={(event) => setNewValue(event.target.value)}
+                    placeholder="Example: High-voltage foil lead time is 6 weeks."
+                  />
+                  <div>
+                    <PrimaryButton
+                      type="button"
+                      icon={<Plus className="h-4 w-4" />}
+                      loading={saving}
+                      onClick={addCustomNode}
+                    >
+                      Add field
+                    </PrimaryButton>
+                  </div>
+                </div>
+
+                {database.company.customTree.length > 0 ? (
+                  <div className="grid gap-3 rounded-[18px] border border-synapse-border bg-synapse-elevated p-4">
+                    {database.company.customTree.map((node) => (
+                      <CustomTreeNode key={node.id} node={node} onUpdate={updateCustomNode} />
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyBlock
+                    title="No custom fields yet"
+                    description="Add a branch or field here to make it available as structured database context."
+                  />
+                )}
               </div>
             </TreeBlock>
           </div>

@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type {
   CompanyDatabase,
+  CustomDatabaseNode,
   IssueThread,
   OfficeAccount,
   PlanDatasetSubmission,
@@ -31,10 +32,57 @@ export type SystemDatabase = {
 };
 
 const systemDatabasePath = path.join(process.cwd(), "data", "system-database.json");
+const defaultOfficeTimestamp = "2026-01-01T00:00:00.000Z";
+
+function createDefaultOffices(): OfficeAccount[] {
+  return [
+    {
+      id: "demo-hq-office",
+      name: "HQ Demo Manager",
+      officeName: "SynapseCore HQ",
+      role: "HQ",
+      branch_id: null,
+      location: "Kuala Lumpur, Malaysia",
+      address: "HQ Demo Office",
+      email: "hq@synapsecore.test",
+      personInChargeName: "HQ Demo Manager",
+      position: "Headquarters Coordinator",
+      contactNumber: "+60 00-000 0000",
+      createdAt: defaultOfficeTimestamp,
+      updatedAt: defaultOfficeTimestamp
+    },
+    {
+      id: "demo-branch-office",
+      name: "Branch Demo Manager",
+      officeName: "SynapseCore Branch",
+      role: "Branch Office",
+      branch_id: "demo-branch-office",
+      location: "Penang, Malaysia",
+      address: "Branch Demo Office",
+      email: "branch@synapsecore.test",
+      personInChargeName: "Branch Demo Manager",
+      position: "Branch Operations Lead",
+      contactNumber: "+60 00-000 0001",
+      createdAt: defaultOfficeTimestamp,
+      updatedAt: defaultOfficeTimestamp
+    }
+  ];
+}
+
+function ensureDefaultDemoOffices(offices: OfficeAccount[]) {
+  const defaults = createDefaultOffices();
+  const existingEmails = new Set(offices.map((office) => office.email.toLowerCase()));
+  const missingDefaults = defaults.filter((office) => !existingEmails.has(office.email.toLowerCase()));
+
+  return [
+    ...missingDefaults,
+    ...offices
+  ];
+}
 
 function createEmptyStore(): SystemDatabase {
   return {
-    offices: [],
+    offices: createDefaultOffices(),
     workflows: [],
     workflowRuns: [],
     projects: [],
@@ -81,7 +129,8 @@ function createEmptyStore(): SystemDatabase {
           { period: "2024", value: 18300000, note: "Procurement for standard consumer-grade capacitor lines." },
           { period: "2025", value: 19750000, note: "Higher specialty material spend for automotive and industrial lines." }
         ]
-      }
+      },
+      customTree: []
     },
     requestConfig: {
       requestAnalysisPrompt:
@@ -236,9 +285,25 @@ function normalizeRequest(request: Partial<RequestApplicationRecord>, index: num
   };
 }
 
+function normalizeCustomDatabaseNode(
+  node: Partial<CustomDatabaseNode>,
+  index: number
+): CustomDatabaseNode {
+  return {
+    id: node.id ?? `custom-node-${index + 1}`,
+    label: node.label ?? "Untitled field",
+    value: node.value ?? "",
+    children: Array.isArray(node.children)
+      ? node.children.map((child, childIndex) => normalizeCustomDatabaseNode(child, childIndex))
+      : [],
+    createdAt: node.createdAt ?? "",
+    updatedAt: node.updatedAt ?? node.createdAt ?? ""
+  };
+}
+
 function normalizeStore(store: Partial<SystemDatabase> | null | undefined): SystemDatabase {
   return {
-    offices: Array.isArray(store?.offices) ? store.offices : [],
+    offices: ensureDefaultDemoOffices(Array.isArray(store?.offices) ? store.offices : []),
     workflows: Array.isArray(store?.workflows)
       ? store.workflows.map((workflow, index) => normalizeWorkflow(workflow, index))
       : [],
@@ -283,7 +348,10 @@ function normalizeStore(store: Partial<SystemDatabase> | null | undefined): Syst
         yearly: Array.isArray(store?.companyDatabase?.procurementRecords?.yearly)
           ? store.companyDatabase.procurementRecords.yearly
           : []
-      }
+      },
+      customTree: Array.isArray(store?.companyDatabase?.customTree)
+        ? store.companyDatabase.customTree.map((node, index) => normalizeCustomDatabaseNode(node, index))
+        : []
     },
     requestConfig: {
       requestAnalysisPrompt:

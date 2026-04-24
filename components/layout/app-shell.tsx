@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -230,8 +231,14 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
       <>
         <div className="rounded-[26px] border border-white/50 bg-white/75 p-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="grid h-12 w-12 place-items-center rounded-[18px] bg-synapse-primary text-lg font-semibold text-white shadow-sm">
-              SC
+            <div className="grid h-12 w-12 place-items-center overflow-hidden rounded-[18px] border border-white/70 bg-slate-950 shadow-sm">
+              <Image
+                src="/synapsecore-logo.png"
+                alt="SynapseCore logo"
+                width={48}
+                height={48}
+                className="h-full w-full object-cover"
+              />
             </div>
             <div className="min-w-0">
               <p className="truncate text-card-title text-synapse-text">SynapseCore</p>

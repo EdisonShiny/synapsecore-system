@@ -3,7 +3,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "SynapseCore System",
-  description: "Internal HQ and Branch Office coordination platform"
+  description: "Internal HQ and Branch Office coordination platform",
+  icons: {
+    icon: "/synapsecore-logo.png",
+    apple: "/synapsecore-logo.png"
+  }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

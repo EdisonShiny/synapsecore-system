@@ -1,9 +1,11 @@
 import { WorkflowDetailPage } from "@/components/system/workflow-detail-page";
 
-export default function WorkflowDetailRoute({
+export default async function WorkflowDetailRoute({
   params
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  return <WorkflowDetailPage workflowId={params.id} />;
+  const { id } = await params;
+
+  return <WorkflowDetailPage workflowId={id} />;
 }

@@ -8,12 +8,12 @@ export type DemoSession = SystemSession;
 
 export const DEMO_LOGIN_OPTIONS = [
   {
-    email: "",
+    email: "branch@synapsecore.test",
     role: "Branch Office" as const,
     label: "Branch Office"
   },
   {
-    email: "",
+    email: "hq@synapsecore.test",
     role: "HQ" as const,
     label: "HQ"
   }

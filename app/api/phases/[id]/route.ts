@@ -5,15 +5,16 @@ import { getSession } from "@/src/utils/auth";
 import type { Phase } from "@/types";
 
 type RouteContext = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
     const { user } = getSession(request);
-    return ok("Phase fetched successfully", getPhaseById(params.id, user));
+    const { id } = await params;
+    return ok("Phase fetched successfully", getPhaseById(id, user));
   } catch (error) {
     return fail("Failed to fetch phase", [error instanceof Error ? error.message : "Unknown error"], 404);
   }
@@ -22,8 +23,9 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
   try {
     const { user } = getSession(request);
+    const { id } = await params;
     const body = (await request.json()) as Partial<Omit<Phase, "id" | "project_id" | "created_at">>;
-    return ok("Phase updated successfully", { phase: updatePhase(params.id, body, user) });
+    return ok("Phase updated successfully", { phase: updatePhase(id, body, user) });
   } catch (error) {
     return fail("Failed to update phase", [error instanceof Error ? error.message : "Unknown error"], 400);
   }

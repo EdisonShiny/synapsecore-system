@@ -1,12 +1,13 @@
 "use client";
 
 import { type FormEvent, useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FormField, PrimaryButton, SecondaryButton, SelectField } from "@/components";
 import { apiRequest } from "@/src/client/api";
-import { writeStoredSession, type DemoSession } from "@/src/client/session";
+import { DEMO_LOGIN_OPTIONS, writeStoredSession, type DemoSession } from "@/src/client/session";
 import { TabsShell } from "@/components/ui/feedback";
-import type { CreateOfficeInput, OfficeRole, PublicAuthStatus } from "@/types/system";
+import type { CreateOfficeInput, DemoAccountSummary, OfficeRole, PublicAuthStatus } from "@/types/system";
 
 const roleOptions: OfficeRole[] = ["HQ", "Branch Office"];
 
@@ -96,11 +97,56 @@ export function AuthPage() {
     }
   }
 
+  async function handlePresetSignIn(account: DemoAccountSummary) {
+    setLoading(true);
+    setError("");
+
+    try {
+      const session = await apiRequest<DemoSession>("/api/auth/login", {
+        method: "POST",
+        json: {
+          email: account.email,
+          role: account.role
+        }
+      });
+      await completeAuth(session);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Preset sign in failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const presetAccounts = authStatus
+    ? DEMO_LOGIN_OPTIONS
+        .map((option) =>
+          authStatus.accounts.find(
+            (account) => account.email === option.email && account.role === option.role
+          ) ?? authStatus.accounts.find((account) => account.role === option.role)
+        )
+        .filter((account): account is DemoAccountSummary => Boolean(account))
+    : [];
+
   return (
     <div className="grid min-h-screen place-items-center bg-synapse-page p-4">
       <div className="w-full max-w-2xl rounded-[32px] border border-white/70 bg-white/85 p-6 shadow-soft backdrop-blur-xl md:p-8">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
+            <div className="mb-4 flex items-center gap-3">
+              <div className="grid h-14 w-14 place-items-center overflow-hidden rounded-[20px] border border-white/70 bg-slate-950 shadow-sm">
+                <Image
+                  src="/synapsecore-logo.png"
+                  alt="SynapseCore logo"
+                  width={56}
+                  height={56}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div>
+                <p className="text-card-title text-synapse-text">SynapseCore</p>
+                <p className="text-meta text-synapse-muted">HQ and branch workflow service</p>
+              </div>
+            </div>
             <p className="text-meta uppercase tracking-[0.12em] text-synapse-secondary">Internal system access</p>
             <h1 className="mt-2 text-[34px] font-semibold leading-tight text-synapse-text">Sign in or create an office account</h1>
             <p className="mt-3 text-body text-synapse-muted">
@@ -162,9 +208,33 @@ export function AuthPage() {
                 </PrimaryButton>
               </form>
 
-              {authStatus && authStatus.accountCount === 0 ? (
-                <div className="rounded-[22px] border border-dashed border-synapse-border bg-synapse-elevated/70 p-6 text-body text-synapse-muted">
-                  No accounts have been registered yet. Create the first HQ account in the Sign Up tab.
+              {presetAccounts.length > 0 ? (
+                <div className="grid gap-3 rounded-[22px] border border-synapse-border bg-synapse-elevated/70 p-4">
+                  <div>
+                    <p className="text-card-title text-synapse-text">Preset testing accounts</p>
+                    <p className="mt-1 text-body text-synapse-muted">
+                      Use these accounts to test the HQ and Branch Office views without creating a new account.
+                    </p>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {presetAccounts.map((account) => (
+                      <SecondaryButton
+                        key={account.id}
+                        type="button"
+                        loading={loading}
+                        onClick={() => handlePresetSignIn(account)}
+                      >
+                        Sign in as {account.role}
+                      </SecondaryButton>
+                    ))}
+                  </div>
+                  <div className="grid gap-2 text-meta text-synapse-muted">
+                    {presetAccounts.map((account) => (
+                      <p key={`${account.id}-email`}>
+                        {account.role}: {account.email}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               ) : null}
               {error ? <p className="text-body text-synapse-error">{error}</p> : null}

@@ -29,3 +29,17 @@ export function shouldUseMockAi() {
 export function shouldUseMockDatabase() {
   return !isRealModeEnabled() || runtimeConfig.databaseUrl.length === 0;
 }
+
+export function resolveChatCompletionsEndpoint(endpoint: string) {
+  const trimmed = endpoint.replace(/\/+$/g, "");
+
+  if (!trimmed) {
+    return "";
+  }
+
+  if (trimmed.endsWith("/chat/completions")) {
+    return trimmed;
+  }
+
+  return `${trimmed}/chat/completions`;
+}

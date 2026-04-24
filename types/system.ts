@@ -404,6 +404,15 @@ export type SalesDatabaseRecord = {
   note: string;
 };
 
+export type CustomDatabaseNode = {
+  id: string;
+  label: string;
+  value: string;
+  children: CustomDatabaseNode[];
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type CompanyGeneralInfo = {
   companyName: string;
   workingField: string;
@@ -424,6 +433,7 @@ export type CompanyDatabase = {
     monthly: NumericDatabaseRecord[];
     yearly: NumericDatabaseRecord[];
   };
+  customTree: CustomDatabaseNode[];
 };
 
 export type WorkflowDetailPayload = {
@@ -451,6 +461,18 @@ export type DatabaseAttachmentOption = {
   path: string;
   label: string;
   description: string;
+};
+
+export type CreateCustomDatabaseNodeInput = {
+  parentId?: string | null;
+  label: string;
+  value?: string;
+};
+
+export type UpdateCustomDatabaseNodeInput = {
+  id: string;
+  label: string;
+  value: string;
 };
 
 export type CreateOfficeInput = {

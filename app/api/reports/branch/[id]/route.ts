@@ -4,15 +4,16 @@ import { fail, ok } from "@/src/utils/api";
 import { getSession } from "@/src/utils/auth";
 
 type RouteContext = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
     const { user } = getSession(request);
-    return ok("Branch report fetched successfully", { report: getBranchReport(params.id, user) });
+    const { id } = await params;
+    return ok("Branch report fetched successfully", { report: getBranchReport(id, user) });
   } catch (error) {
     return fail("Failed to fetch branch report", [error instanceof Error ? error.message : "Unknown error"], 404);
   }
