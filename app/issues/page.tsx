@@ -1,5 +1,5 @@
-import { IssuesPage } from "@/components/system/issues-page";
+import { redirect } from "next/navigation";
 
 export default function IssuesRoute() {
-  return <IssuesPage />;
+  redirect("/requests");
 }

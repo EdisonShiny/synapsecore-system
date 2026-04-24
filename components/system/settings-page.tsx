@@ -6,7 +6,7 @@ import { apiRequest } from "@/src/client/api";
 import { useDemoSession } from "@/src/client/use-demo-session";
 import { ModalDialog } from "@/components/ui/feedback";
 import { PageSection } from "@/components/system/ui";
-import type { OfficeAccount } from "@/types/system";
+import type { OfficeAccount, SystemSettingsPayload } from "@/types/system";
 
 type SettingsForm = {
   location: string;
@@ -27,6 +27,12 @@ export function SettingsPage() {
     email: "",
     contactNumber: ""
   });
+  const [aiConfig, setAiConfig] = useState<SystemSettingsPayload["aiConfig"]>({
+    apiUrl: "",
+    apiKey: "",
+    enableWebSearch: true
+  });
+  const [databaseInfo, setDatabaseInfo] = useState<SystemSettingsPayload["database"] | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -43,17 +49,22 @@ export function SettingsPage() {
       setLoading(true);
 
       try {
-        const data = await apiRequest<{ office: OfficeAccount }>("/api/offices/me", { session });
+        const [officeData, settingsData] = await Promise.all([
+          apiRequest<{ office: OfficeAccount }>("/api/offices/me", { session }),
+          apiRequest<SystemSettingsPayload>("/api/settings/system-config", { session })
+        ]);
 
         if (active) {
           setForm({
-            location: data.office.location,
-            address: data.office.address,
-            personInChargeName: data.office.personInChargeName,
-            position: data.office.position,
-            email: data.office.email,
-            contactNumber: data.office.contactNumber
+            location: officeData.office.location,
+            address: officeData.office.address,
+            personInChargeName: officeData.office.personInChargeName,
+            position: officeData.office.position,
+            email: officeData.office.email,
+            contactNumber: officeData.office.contactNumber
           });
+          setAiConfig(settingsData.aiConfig);
+          setDatabaseInfo(settingsData.database);
         }
       } catch (loadError) {
         if (active) {
@@ -99,6 +110,33 @@ export function SettingsPage() {
       setFeedback("Settings updated successfully.");
     } catch (submitError) {
       setFeedback(submitError instanceof Error ? submitError.message : "Settings update failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleSaveAiConfig(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const currentSession = session;
+
+    if (!currentSession) {
+      return;
+    }
+
+    setSubmitting(true);
+    setFeedback("");
+
+    try {
+      const data = await apiRequest<SystemSettingsPayload>("/api/settings/system-config", {
+        method: "PATCH",
+        session: currentSession,
+        json: aiConfig
+      });
+      setAiConfig(data.aiConfig);
+      setDatabaseInfo(data.database);
+      setFeedback("System AI configuration updated successfully.");
+    } catch (submitError) {
+      setFeedback(submitError instanceof Error ? submitError.message : "AI configuration update failed.");
     } finally {
       setSubmitting(false);
     }
@@ -176,6 +214,59 @@ export function SettingsPage() {
         )}
         {feedback ? <p className={`text-body ${feedback.includes("failed") || feedback.includes("Failed") ? "text-synapse-error" : "text-synapse-secondary"}`}>{feedback}</p> : null}
       </PageSection>
+
+      {session.user.role === "HQ" ? (
+        <PageSection
+          title="AI configuration"
+          description="Store the live AI API link and key here. Workflow, request, and phase AI stages now use these values for real ILMU calls, with a local fallback if the live call fails."
+        >
+          {loading ? (
+            <p className="text-body text-synapse-muted">Loading AI configuration...</p>
+          ) : (
+            <form className="grid gap-4" onSubmit={handleSaveAiConfig}>
+              <FormField
+                label="AI API link"
+                value={aiConfig.apiUrl}
+                onChange={(event) =>
+                  setAiConfig((current) => ({ ...current, apiUrl: event.target.value }))
+                }
+                placeholder="https://api.ilmu.ai/v1"
+                hint="Use the ILMU OpenAI-compatible base URL. The app will call /chat/completions under this base."
+              />
+              <FormField
+                label="AI API key"
+                type="password"
+                value={aiConfig.apiKey}
+                onChange={(event) =>
+                  setAiConfig((current) => ({ ...current, apiKey: event.target.value }))
+                }
+                placeholder="Enter the server-side API key"
+                hint="The live client uses this saved key when calling ILMU."
+              />
+              <label className="flex items-center gap-3 text-body text-synapse-text">
+                <input
+                  type="checkbox"
+                  checked={aiConfig.enableWebSearch}
+                  onChange={(event) =>
+                    setAiConfig((current) => ({ ...current, enableWebSearch: event.target.checked }))
+                  }
+                />
+                Enable web search tool for AI calls
+              </label>
+              {databaseInfo ? (
+                <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4 text-body text-synapse-muted">
+                  <p className="font-semibold text-synapse-text">Current persistent database</p>
+                  <p className="mt-2">Engine: {databaseInfo.engine}</p>
+                  <p className="mt-1 break-all">Path: {databaseInfo.path}</p>
+                </div>
+              ) : null}
+              <PrimaryButton loading={submitting} type="submit">
+                Save AI configuration
+              </PrimaryButton>
+            </form>
+          )}
+        </PageSection>
+      ) : null}
 
       <PageSection
         title={session.user.role === "HQ" ? "System-level data controls" : "Branch data controls"}

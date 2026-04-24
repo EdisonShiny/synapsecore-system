@@ -1,0 +1,384 @@
+"use client";
+
+import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { AppShell, FileUploadBox, PrimaryButton, SecondaryButton, TextAreaField } from "@/components";
+import { apiRequest } from "@/src/client/api";
+import { useDemoSession } from "@/src/client/use-demo-session";
+import { databaseAttachmentOptions } from "@/src/modules/system/database-options";
+import { filesToAttachmentReferences } from "@/components/system/file-utils";
+import { formatDateTime } from "@/components/system/format";
+import { AiTransparencyPanel, EmptyBlock, PageSection, WorkflowStatusBadge } from "@/components/system/ui";
+import type { DatabasePayload, ProjectPhaseRecord, ProjectRecord } from "@/types/system";
+
+function PhaseCard({
+  phase,
+  current
+}: {
+  phase: ProjectPhaseRecord;
+  current: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-[22px] border p-4 ${
+        current
+          ? "border-blue-200 bg-blue-50"
+          : "border-synapse-border bg-synapse-elevated"
+      }`}
+    >
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p className="text-card-title text-synapse-text">{phase.title}</p>
+          <p className="mt-1 text-body text-synapse-muted">{phase.objective}</p>
+        </div>
+        <div className="rounded-full border border-synapse-border bg-white px-3 py-1 text-meta text-synapse-muted">
+          {phase.status}
+        </div>
+      </div>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div className="rounded-[18px] border border-synapse-border bg-white p-4">
+          <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Actionable plans</p>
+          <div className="mt-3 grid gap-2 text-body text-synapse-text">
+            {phase.actionablePlans.length > 0 ? (
+              phase.actionablePlans.map((plan, index) => <p key={`${phase.id}-plan-${index}`}>{index + 1}. {plan}</p>)
+            ) : (
+              <p className="text-synapse-muted">No plans recorded.</p>
+            )}
+          </div>
+        </div>
+        <div className="rounded-[18px] border border-synapse-border bg-white p-4">
+          <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Expected outcome / aim</p>
+          <p className="mt-3 text-body text-synapse-text">{phase.expectedOutcome || "No expected outcome recorded."}</p>
+          {phase.completedAt ? (
+            <p className="mt-3 text-meta text-synapse-muted">Completed {formatDateTime(phase.completedAt)}</p>
+          ) : null}
+        </div>
+      </div>
+      {phase.completionInput ? (
+        <div className="mt-4 rounded-[18px] border border-synapse-border bg-white p-4">
+          <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Outcome input</p>
+          <p className="mt-3 text-body text-synapse-text">{phase.completionInput}</p>
+          {phase.completionAttachments.length > 0 ? (
+            <>
+              <p className="mt-4 text-meta uppercase tracking-[0.08em] text-synapse-muted">Attached files</p>
+              <div className="mt-2 grid gap-2 text-body text-synapse-text">
+                {phase.completionAttachments.map((attachment) => (
+                  <p key={attachment.id}>{attachment.name} ({attachment.contentStatus ?? "metadata-only"})</p>
+                ))}
+              </div>
+            </>
+          ) : null}
+          {phase.completionDatabasePaths.length > 0 ? (
+            <>
+              <p className="mt-4 text-meta uppercase tracking-[0.08em] text-synapse-muted">Attached database context</p>
+              <div className="mt-2 grid gap-2 text-body text-synapse-text">
+                {phase.completionDatabasePaths.map((path) => (
+                  <p key={path}>{path}</p>
+                ))}
+              </div>
+            </>
+          ) : null}
+          {phase.completionReport ? (
+            <>
+              <p className="mt-4 text-meta uppercase tracking-[0.08em] text-synapse-muted">Phase report</p>
+              <p className="mt-2 text-body text-synapse-muted">{phase.completionReport}</p>
+            </>
+          ) : null}
+          {phase.validationSummary ? (
+            <p className="mt-4 text-body text-synapse-text">
+              <span className="font-semibold">Validation:</span> {phase.validationSummary}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export function ProjectDetailPage({ projectId }: { projectId: string }) {
+  const router = useRouter();
+  const { session, loading: sessionLoading, signOut } = useDemoSession();
+  const [project, setProject] = useState<ProjectRecord | null>(null);
+  const [outcomeInput, setOutcomeInput] = useState("");
+  const [phaseAttachments, setPhaseAttachments] = useState<FileList | null>(null);
+  const [selectedDatabasePaths, setSelectedDatabasePaths] = useState<string[]>([]);
+  const [database, setDatabase] = useState<DatabasePayload | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [feedback, setFeedback] = useState("");
+
+  useEffect(() => {
+    if (!session) {
+      return;
+    }
+
+    let active = true;
+
+    async function load() {
+      setLoading(true);
+      setError("");
+
+      try {
+        const data = await apiRequest<{ project: ProjectRecord }>(`/api/projects/${projectId}`, {
+          session
+        });
+        const databaseData = await apiRequest<DatabasePayload>("/api/database", { session });
+
+        if (active) {
+          setProject(data.project);
+          setDatabase(databaseData);
+        }
+      } catch (loadError) {
+        if (active) {
+          setError(loadError instanceof Error ? loadError.message : "Failed to load project.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void load();
+
+    return () => {
+      active = false;
+    };
+  }, [projectId, session]);
+
+  const currentPhase = useMemo(
+    () => project?.phases.find((phase) => phase.status === "Current") ?? null,
+    [project]
+  );
+
+  if (!session || sessionLoading) {
+    return null;
+  }
+
+  async function reloadProject() {
+    if (!session) {
+      return;
+    }
+
+    const data = await apiRequest<{ project: ProjectRecord }>(`/api/projects/${projectId}`, {
+      session
+    });
+    setProject(data.project);
+  }
+
+  async function handleProgressPhase(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!session || !project) {
+      return;
+    }
+
+    setSubmitting(true);
+    setFeedback("");
+
+    try {
+      const data = await apiRequest<{ project: ProjectRecord }>(`/api/projects/${project.id}/progress`, {
+        method: "POST",
+        session,
+        json: {
+          unstructuredInput: outcomeInput,
+          attachments: await filesToAttachmentReferences(phaseAttachments),
+          selectedDatabasePaths
+        }
+      });
+      setProject(data.project);
+      setOutcomeInput("");
+      setPhaseAttachments(null);
+      setFeedback(
+        data.project.lifecycleState === "Completed"
+          ? "Project phase validated and the project is now closed."
+          : "Project phase validated and the next phase was generated."
+      );
+      await reloadProject();
+    } catch (submitError) {
+      setFeedback(submitError instanceof Error ? submitError.message : "Phase progression failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <AppShell
+      session={session}
+      signOut={signOut}
+      title="Project Detail"
+      description="Inspect the project, review phase history, and submit outcome input after executing the current plan."
+    >
+      <PageSection title="Navigation">
+        <div className="flex flex-wrap gap-3">
+          <SecondaryButton type="button" onClick={() => router.push("/projects")}>
+            Back to projects
+          </SecondaryButton>
+          {project?.workflowId ? (
+            <PrimaryButton type="button" onClick={() => router.push(`/workflows/${project.workflowId}`)}>
+              Open source workflow
+            </PrimaryButton>
+          ) : null}
+        </div>
+      </PageSection>
+
+      {loading ? <p className="text-body text-synapse-muted">Loading project...</p> : null}
+      {error ? <p className="text-body text-synapse-error">{error}</p> : null}
+      {feedback ? (
+        <p className={`text-body ${feedback.toLowerCase().includes("failed") ? "text-synapse-error" : "text-synapse-secondary"}`}>
+          {feedback}
+        </p>
+      ) : null}
+
+      {!loading && !error && !project ? (
+        <PageSection title="Project unavailable">
+          <EmptyBlock title="Project not found" description="The requested project could not be loaded." />
+        </PageSection>
+      ) : null}
+
+      {project ? (
+        <>
+          <PageSection title={project.subject} description="This project was created from a validated workflow run.">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div className="grid gap-2 text-body text-synapse-muted">
+                <p><span className="font-semibold text-synapse-text">Office:</span> {project.branchOfficeName}</p>
+                <p><span className="font-semibold text-synapse-text">Workflow:</span> {project.workflowName ?? "Manual record"}</p>
+                <p><span className="font-semibold text-synapse-text">Created:</span> {formatDateTime(project.createdAt)}</p>
+                <p><span className="font-semibold text-synapse-text">Lifecycle:</span> {project.lifecycleState}</p>
+              </div>
+              <WorkflowStatusBadge status={project.status} />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+                <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Project summary</p>
+                <p className="mt-3 text-body text-synapse-text">{project.description}</p>
+              </div>
+              <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+                <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Applicant</p>
+                <div className="mt-3 grid gap-2 text-body text-synapse-text">
+                  <p>{project.applicantName}</p>
+                  <p>{project.position}</p>
+                  <p>{project.email}</p>
+                </div>
+              </div>
+            </div>
+          </PageSection>
+
+          <PageSection
+            title="Current actionable plan"
+            description="Execute the current phase plans, then submit unstructured outcome input to trigger the next-phase workflow."
+          >
+            {currentPhase ? (
+              <div className="grid gap-4">
+                <PhaseCard phase={currentPhase} current />
+                {project.status === "Approved" && project.lifecycleState === "Active" ? (
+                  <form className="grid gap-4 rounded-[22px] border border-synapse-border bg-white p-4" onSubmit={handleProgressPhase}>
+                    <TextAreaField
+                      label="Phase outcome input"
+                      required
+                      value={outcomeInput}
+                      onChange={(event) => setOutcomeInput(event.target.value)}
+                      hint="Paste the unstructured result from executing the current phase. This will trigger prompt 5, extraction, validation, and prompt 6 for the next phase or closure."
+                    />
+                    <div className="grid gap-2">
+                      <FileUploadBox
+                        label="Attach phase files"
+                        hint="Attach field notes, CSVs, markdown, JSON, or other supported files to enrich the outcome input."
+                      />
+                      <input
+                        className="text-body text-synapse-muted"
+                        type="file"
+                        multiple
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,.txt,.rtf,.md,.json,.log,.xml"
+                        onChange={(event) => setPhaseAttachments(event.target.files)}
+                      />
+                    </div>
+                    <div className="grid gap-3 rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+                      <p className="text-card-title text-synapse-text">Attach structured database context</p>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        {databaseAttachmentOptions.map((option) => (
+                          <label key={option.path} className="flex items-start gap-3 text-body text-synapse-text">
+                            <input
+                              type="checkbox"
+                              checked={selectedDatabasePaths.includes(option.path)}
+                              onChange={(event) =>
+                                setSelectedDatabasePaths((current) =>
+                                  event.target.checked
+                                    ? [...current, option.path]
+                                    : current.filter((path) => path !== option.path)
+                                )
+                              }
+                            />
+                            <span>
+                              <span className="block font-medium">{option.label}</span>
+                              <span className="text-synapse-muted">{option.description}</span>
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                      {database ? (
+                        <p className="text-meta text-synapse-muted">
+                          Company context available: {database.company.generalInfo.companyName}
+                        </p>
+                      ) : null}
+                    </div>
+                    <PrimaryButton loading={submitting} type="submit">
+                      Submit outcome and progress phase
+                    </PrimaryButton>
+                  </form>
+                ) : (
+                  <div className="rounded-[22px] border border-synapse-border bg-white p-4 text-body text-synapse-muted">
+                    {project.status !== "Approved"
+                      ? "This project must be approved before phase progression can begin."
+                      : "This project is already completed."}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <EmptyBlock
+                title="No active phase"
+                description="This project does not yet contain a current actionable phase."
+              />
+            )}
+          </PageSection>
+
+          <PageSection title="Project phases history" description="Every completed or generated phase stays attached to the project record.">
+            <div className="grid gap-4">
+              {project.phases.length > 0 ? (
+                project.phases
+                  .slice()
+                  .sort((left, right) => left.phaseNumber - right.phaseNumber)
+                  .map((phase) => (
+                    <PhaseCard key={phase.id} phase={phase} current={phase.status === "Current"} />
+                  ))
+              ) : (
+                <EmptyBlock
+                  title="No phase history"
+                  description="This project has not yet stored any phase plans."
+                />
+              )}
+            </div>
+          </PageSection>
+
+          <PageSection title="Approval history" description="This tracks the request state after the workflow built the project.">
+            <div className="grid gap-3">
+              {project.statusHistory.map((entry, index) => (
+                <div key={`${entry.status}-${index}-${entry.changedAt}`} className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <WorkflowStatusBadge status={entry.status} />
+                    <p className="text-meta text-synapse-muted">{formatDateTime(entry.changedAt)}</p>
+                  </div>
+                  <p className="mt-3 text-body text-synapse-text">{entry.note}</p>
+                  <p className="mt-2 text-meta text-synapse-muted">{entry.changedByOfficeName}</p>
+                </div>
+              ))}
+            </div>
+          </PageSection>
+
+          <AiTransparencyPanel insight={project.report.aiOutput} title="Project AI trace" />
+        </>
+      ) : null}
+    </AppShell>
+  );
+}

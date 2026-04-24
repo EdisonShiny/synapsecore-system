@@ -3,7 +3,7 @@
 import { AlertTriangle, CheckCircle2, Clock3, FileWarning, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/ui/badges";
-import type { AiInsight, WorkflowStatus } from "@/types/system";
+import type { AiInsight, ValidationResultStatus, WorkflowRunStatus, WorkflowStatus } from "@/types/system";
 
 export function PageSection({
   title,
@@ -144,6 +144,69 @@ export function RecordList<T>({
   }
 
   return <div className="grid gap-3">{items.map(renderItem)}</div>;
+}
+
+export function WorkflowRunStatusBadge({ status }: { status: WorkflowRunStatus }) {
+  const tone = status === "Completed" ? "success" : status === "Failed" ? "error" : "info";
+  return <StatusBadge tone={tone}>{status}</StatusBadge>;
+}
+
+export function ValidationBadge({ result }: { result: ValidationResultStatus }) {
+  return <StatusBadge tone={result === "Pass" ? "success" : "warning"}>{result}</StatusBadge>;
+}
+
+export function WorkflowStageMap({
+  stages
+}: {
+  stages: Array<{
+    label: string;
+    description: string;
+    state: "done" | "active" | "upcoming" | "blocked";
+  }>;
+}) {
+  const stateStyles: Record<(typeof stages)[number]["state"], string> = {
+    done: "border-emerald-200 bg-emerald-50",
+    active: "border-blue-200 bg-blue-50",
+    upcoming: "border-synapse-border bg-synapse-elevated",
+    blocked: "border-amber-200 bg-amber-50"
+  };
+
+  const dotStyles: Record<(typeof stages)[number]["state"], string> = {
+    done: "bg-emerald-500",
+    active: "bg-blue-500",
+    upcoming: "bg-slate-300",
+    blocked: "bg-amber-500"
+  };
+
+  const stateLabels: Record<(typeof stages)[number]["state"], string> = {
+    done: "Done",
+    active: "Active",
+    upcoming: "Upcoming",
+    blocked: "Needs attention"
+  };
+
+  return (
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      {stages.map((stage, index) => (
+        <div
+          key={stage.label}
+          className={cn("rounded-[22px] border p-4 shadow-sm", stateStyles[stage.state])}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className={cn("h-2.5 w-2.5 rounded-full", dotStyles[stage.state])} aria-hidden />
+              <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Step {index + 1}</p>
+            </div>
+            <StatusBadge tone={stage.state === "done" ? "success" : stage.state === "active" ? "info" : stage.state === "blocked" ? "warning" : "neutral"}>
+              {stateLabels[stage.state]}
+            </StatusBadge>
+          </div>
+          <p className="mt-3 text-card-title text-synapse-text">{stage.label}</p>
+          <p className="mt-2 text-body text-synapse-muted">{stage.description}</p>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function AiTransparencyPanel({

@@ -1,5 +1,5 @@
-import { ApplicationPage } from "@/components/system/application-page";
+import { redirect } from "next/navigation";
 
 export default function ApplicationRoute() {
-  return <ApplicationPage />;
+  redirect("/workflows");
 }

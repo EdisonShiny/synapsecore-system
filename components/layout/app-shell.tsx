@@ -1,32 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BellDot,
-  BrainCircuit,
-  LayoutDashboard,
+  AlertTriangle,
+  CheckCircle2,
+  Database,
+  FolderKanban,
+  GitBranchPlus,
+  Inbox,
+  Loader2,
   LogOut,
   PanelLeft,
-  ReceiptText,
   Settings,
   X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { apiRequest } from "@/src/client/api";
-import { RoleBadge, StatusBadge } from "@/components/ui/badges";
+import { RoleBadge } from "@/components/ui/badges";
 import { SecondaryButton } from "@/components/ui/buttons";
+import { apiRequest } from "@/src/client/api";
 import type { DemoSession } from "@/src/client/session";
-import type { DashboardPayload, OfficeRole } from "@/types/system";
+import type { OfficeRole, SystemAiHealthPayload, SystemAiHealthStatus } from "@/types/system";
 
-const navItems = (role: OfficeRole) =>
+const navItems = (_role: OfficeRole) =>
   [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-    { label: role === "HQ" ? "Approval" : "Application", icon: ReceiptText, href: "/application" },
-    { label: "Plan & Validate", icon: BrainCircuit, href: "/plan-validate" },
-    { label: "Report Issues", icon: BellDot, href: "/issues" },
-    { label: "Settings", icon: Settings, href: "/settings" }
+    { label: "Projects", icon: FolderKanban, href: "/projects" },
+    { label: "Workflows", icon: GitBranchPlus, href: "/workflows" },
+    { label: "Requests", icon: Inbox, href: "/requests" },
+    { label: "Database", icon: Database, href: "/database" }
   ] as const;
 
 type CurrentShellProps = {
@@ -97,26 +99,30 @@ export function DetailDrawer({
 
 export function AppShell(props: CurrentShellProps | LegacyShellProps) {
   const isCurrentProps = "session" in props;
-  const session = isCurrentProps
-    ? props.session
-    : ({
+  const legacyRole = !isCurrentProps ? props.role : undefined;
+  const legacySession = useMemo(
+    () =>
+      ({
         token: "legacy-shell",
         user: {
           id: "legacy-user",
-          name: props.role === "HQ" ? "HQ User" : "Branch User",
-          officeName: props.role === "HQ" ? "HQ Workspace" : "Branch Workspace",
-          role: props.role ?? "HQ",
-          branch_id: props.role === "HQ" ? null : "legacy-branch",
+          name: legacyRole === "HQ" ? "HQ User" : "Branch User",
+          officeName: legacyRole === "HQ" ? "HQ Workspace" : "Branch Workspace",
+          role: legacyRole ?? "HQ",
+          branch_id: legacyRole === "HQ" ? null : "legacy-branch",
           location: "Workspace",
           address: "",
           email: "",
-          personInChargeName: props.role === "HQ" ? "HQ User" : "Branch User",
+          personInChargeName: legacyRole === "HQ" ? "HQ User" : "Branch User",
           position: "Legacy View",
           contactNumber: "",
           createdAt: "",
           updatedAt: ""
         }
-      } as DemoSession);
+      } as DemoSession),
+    [legacyRole]
+  );
+  const session = isCurrentProps ? props.session : legacySession;
   const title = isCurrentProps ? props.title : props.pageTitle;
   const description = isCurrentProps
     ? props.description
@@ -125,45 +131,99 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
   const drawer = isCurrentProps ? null : props.drawer;
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [notificationCount, setNotificationCount] = useState(0);
+  const [aiHealth, setAiHealth] = useState<SystemAiHealthPayload>({
+    status: "checking",
+    summary: "Checking AI status",
+    detail: "Running a startup probe against the configured AI provider.",
+    testedAt: null,
+    configured: false,
+    model: null
+  });
   const initials =
     session.user.role === "HQ" ? "HQ" : session.user.officeName.slice(0, 2).toUpperCase();
 
-  useEffect(() => {
-    if (!isCurrentProps) {
-      return;
-    }
+  const navigation = navItems(session.user.role);
 
+  useEffect(() => {
     let active = true;
 
-    async function loadSummary() {
+    async function loadAiHealth() {
       try {
-        const data = await apiRequest<{ summary: DashboardPayload }>("/api/dashboard/summary", {
+        const data = await apiRequest<SystemAiHealthPayload>("/api/settings/ai-health", {
           session
         });
 
         if (active) {
-          setNotificationCount(data.summary.unreadIssues);
+          setAiHealth(data);
         }
-      } catch {
+      } catch (error) {
         if (active) {
-          setNotificationCount(0);
+          setAiHealth({
+            status: "fallback-active",
+            summary: "Fallback pipeline active",
+            detail:
+              error instanceof Error
+                ? error.message
+                : "Could not confirm live AI availability, so the app should be treated as fallback mode.",
+            testedAt: null,
+            configured: false,
+            model: null
+          });
         }
       }
     }
 
-    void loadSummary();
-    const timer = window.setInterval(() => {
-      void loadSummary();
-    }, 15000);
+    void loadAiHealth();
 
     return () => {
       active = false;
-      window.clearInterval(timer);
     };
-  }, [isCurrentProps, session]);
+  }, [session]);
 
-  const navigation = navItems(session.user.role);
+  function isSelected(href: string) {
+    return pathname === href || pathname.startsWith(`${href}/`);
+  }
+
+  function renderAiStatus() {
+    const toneStyles: Record<Exclude<SystemAiHealthStatus, "checking">, string> = {
+      "live-ready": "border-emerald-200 bg-emerald-50 text-emerald-800",
+      "fallback-active": "border-amber-200 bg-amber-50 text-amber-800",
+      "missing-config": "border-slate-200 bg-slate-100 text-slate-700"
+    };
+
+    if (aiHealth.status === "checking") {
+      return (
+        <div className="rounded-[24px] border border-blue-200 bg-blue-50 p-4 text-blue-800 shadow-sm">
+          <div className="flex items-start gap-3">
+            <Loader2 className="mt-0.5 h-4 w-4 animate-spin shrink-0" />
+            <div>
+              <p className="text-card-title">Checking AI status</p>
+              <p className="mt-1 text-body text-blue-700">
+                Running a startup probe against the configured provider.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const Icon = aiHealth.status === "live-ready" ? CheckCircle2 : AlertTriangle;
+
+    return (
+      <div className={cn("rounded-[24px] border p-4 shadow-sm", toneStyles[aiHealth.status])}>
+        <div className="flex items-start gap-3">
+          <Icon className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <p className="text-card-title">{aiHealth.summary}</p>
+            <p className="mt-1 text-body">{aiHealth.detail}</p>
+            {aiHealth.model ? (
+              <p className="mt-2 text-meta opacity-80">Configured model: {aiHealth.model}</p>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   function sidebarContent() {
     return (
@@ -175,48 +235,59 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
             </div>
             <div className="min-w-0">
               <p className="truncate text-card-title text-synapse-text">SynapseCore</p>
-              <p className="truncate text-meta text-synapse-muted">HQ and Branch coordination</p>
+              <p className="truncate text-meta text-synapse-muted">HQ and branch workflow service</p>
             </div>
           </div>
         </div>
         <nav className="grid gap-2" aria-label="Primary navigation">
-          {navigation.map(({ label, icon: Icon, href }) => {
-            const selected = pathname === href;
-
-            return (
-              <Link
-                key={label}
-                href={href}
-                onClick={() => setMobileOpen(false)}
-                className={cn(
-                  "synapse-focus flex min-h-12 items-center gap-3 rounded-2xl border px-4 text-body transition",
-                  selected
-                    ? "border-blue-200 bg-blue-50 text-synapse-primary shadow-sm"
-                    : "border-transparent text-synapse-muted hover:border-synapse-border hover:bg-white hover:text-synapse-text"
-                )}
-              >
-                <Icon className="h-5 w-5 shrink-0" />
-                <span>{label}</span>
-              </Link>
-            );
-          })}
+          {navigation.map(({ label, icon: Icon, href }) => (
+            <Link
+              key={label}
+              href={href}
+              onClick={() => setMobileOpen(false)}
+              className={cn(
+                "synapse-focus flex min-h-12 items-center gap-3 rounded-2xl border px-4 text-body transition",
+                isSelected(href)
+                  ? "border-blue-200 bg-blue-50 text-synapse-primary shadow-sm"
+                  : "border-transparent text-synapse-muted hover:border-synapse-border hover:bg-white hover:text-synapse-text"
+              )}
+            >
+              <Icon className="h-5 w-5 shrink-0" />
+              <span>{label}</span>
+            </Link>
+          ))}
         </nav>
-        <div className="mt-auto rounded-[24px] border border-white/50 bg-white/80 p-4 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-card-title text-synapse-text">{session.user.officeName}</p>
-              <p className="mt-1 text-body text-synapse-muted">{session.user.location}</p>
-            </div>
-            <RoleBadge role={session.user.role} />
-          </div>
-          <p className="mt-3 text-meta text-synapse-muted">
-            {session.user.personInChargeName} · {session.user.position}
-          </p>
-          <SecondaryButton
-            className="mt-4 w-full"
-            onClick={signOut}
-            icon={<LogOut className="h-4 w-4" />}
+        <div className="mt-auto grid gap-3">
+          {renderAiStatus()}
+          <Link
+            href="/settings"
+            onClick={() => setMobileOpen(false)}
+            className={cn(
+              "synapse-focus flex min-h-12 items-center gap-3 rounded-2xl border px-4 text-body transition",
+              isSelected("/settings")
+                ? "border-blue-200 bg-blue-50 text-synapse-primary shadow-sm"
+                : "border-transparent bg-white/80 text-synapse-muted hover:border-synapse-border hover:bg-white hover:text-synapse-text"
+            )}
           >
+            <Settings className="h-5 w-5 shrink-0" />
+            <div>
+              <p>Settings</p>
+              <p className="text-meta text-synapse-muted">User profile and AI API config</p>
+            </div>
+          </Link>
+          <div className="rounded-[24px] border border-white/50 bg-white/80 p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-card-title text-synapse-text">{session.user.personInChargeName}</p>
+                <p className="mt-1 text-body text-synapse-muted">{session.user.officeName}</p>
+              </div>
+              <RoleBadge role={session.user.role} />
+            </div>
+            <p className="mt-3 text-meta text-synapse-muted">
+              {session.user.location} / {session.user.position}
+            </p>
+          </div>
+          <SecondaryButton className="w-full" onClick={signOut} icon={<LogOut className="h-4 w-4" />}>
             Sign out
           </SecondaryButton>
         </div>
@@ -262,11 +333,6 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
               </p>
             </div>
             <div className="hidden items-center gap-3 md:flex">
-              {notificationCount > 0 ? (
-                <StatusBadge tone="warning">
-                  {notificationCount} unread issue{notificationCount > 1 ? "s" : ""}
-                </StatusBadge>
-              ) : null}
               <RoleBadge role={session.user.role} />
               <div className="grid h-11 w-11 place-items-center rounded-full border border-synapse-border bg-white text-body font-semibold shadow-sm">
                 {initials}
@@ -274,16 +340,6 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
             </div>
           </div>
         </header>
-        {notificationCount > 0 ? (
-          <div className="pointer-events-none fixed right-4 top-24 z-40 lg:right-8">
-            <div className="pointer-events-auto rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 shadow-soft">
-              <p className="text-body font-semibold text-amber-900">Urgent issue notification</p>
-              <p className="mt-1 text-body text-amber-800">
-                {notificationCount} issue thread{notificationCount > 1 ? "s need" : " needs"} attention.
-              </p>
-            </div>
-          </div>
-        ) : null}
         <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 md:px-6 xl:px-8">
           {props.children}
           {drawer}

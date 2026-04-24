@@ -108,16 +108,16 @@ export function PlanValidatePage() {
       title="Plan & Validate"
       description={
         isHq
-          ? "View overall and branch-level AI judgments on demand, finance, and risk."
-          : "Upload internal datasets and combine them with external signals for branch planning judgment."
+          ? "Review initial phase planning signals, branch risk, and validation-readiness before human approval."
+          : "Prepare the initial phase plan, combine branch evidence with outside signals, and surface validation-relevant judgment."
       }
     >
       <PageSection
-        title={isHq ? "Planning intelligence" : "Branch AI planning"}
+        title={isHq ? "Planning intelligence" : "Initial planning input"}
         description={
           isHq
-            ? "HQ can review the overall company conclusion and drill into single-branch views."
-            : "The AI combines uploaded datasets with local trends, global trends, news, and feedback direction."
+            ? "HQ can compare overall and branch-level planning signals before the approval layer."
+            : "Use this step to feed the initial phase plan with branch datasets, local signals, global signals, news, and feedback direction."
         }
       >
         <form className="grid gap-4" onSubmit={handleSubmit}>
@@ -152,7 +152,7 @@ export function PlanValidatePage() {
             />
           </div>
           <PrimaryButton loading={submitting} type="submit">
-            Generate AI judgment
+            Generate planning judgment
           </PrimaryButton>
         </form>
         {feedback ? <p className={`text-body ${feedback.includes("Failed") ? "text-synapse-error" : "text-synapse-secondary"}`}>{feedback}</p> : null}
@@ -193,9 +193,27 @@ export function PlanValidatePage() {
           description={
             isHq
               ? "Single-branch demand, finance, and risk judgment."
-              : "Structured AI advice combining external searchable context and uploaded branch datasets."
+              : "Structured AI advice combining external searchable context and uploaded branch datasets before validation."
           }
         >
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+              <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Validator check</p>
+              <p className="mt-3 text-body text-synapse-text">Is the gathered information grounded in real evidence?</p>
+            </div>
+            <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+              <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Impact review</p>
+              <p className="mt-3 text-body text-synapse-text">What could happen if the proposed plan is executed?</p>
+            </div>
+            <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+              <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Risk handling</p>
+              <p className="mt-3 text-body text-synapse-text">How can the branch or HQ reduce the identified risk?</p>
+            </div>
+            <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+              <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Confidence</p>
+              <p className="mt-3 text-body text-synapse-text">Use the AI workflow output to judge whether human review is still required.</p>
+            </div>
+          </div>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
               <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Demand</p>

@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { ProjectsPage as ProjectsPageView } from "@/components/system/projects-page";
 
 export default function ProjectsPage() {
-  redirect("/application");
+  return <ProjectsPageView />;
 }
