@@ -197,6 +197,35 @@ function validateWorkflowConfig(config: WorkflowPromptConfig) {
   return normalized;
 }
 
+const requestExtractorPrompt =
+  "You are preset prompt 2 for the request approval workflow. Extract the most important grounded facts from the request report. Return the key approval scope, operational need, measurable evidence, business impact, delivery constraints, and any critical support context without exaggeration.";
+
+const requestValidatorPrompt =
+  "You are preset prompt 3 for the request approval workflow. Validate whether the extracted facts are actually grounded in the request application, unstructured support inputs, attached files, and selected structured company data. Reduce the effect of adjectives, reject unsupported assumptions, return pass or fail, explain why, and provide retry guidance when the result is not grounded enough.";
+
+function buildRequestApprovalWorkflowConfig(requestPrompt: string): WorkflowRecord {
+  return {
+    id: "request-workflow",
+    name: "Request Approval Workflow",
+    description: "AI-assisted request approval workflow",
+    createdByOfficeId: "",
+    createdByOfficeName: "",
+    createdAt: "",
+    updatedAt: "",
+    lastRunAt: null,
+    runCount: 0,
+    projectCount: 0,
+    config: {
+      reportPrompt: requestPrompt,
+      extractorPrompt: requestExtractorPrompt,
+      validatorPrompt: requestValidatorPrompt,
+      projectBuilderPrompt: "",
+      phaseProgressPrompt: "",
+      phaseBuilderPrompt: ""
+    }
+  };
+}
+
 function getOfficeById(officeId: string) {
   const office = getSystemStore().offices.find((entry) => entry.id === officeId);
 
@@ -689,6 +718,17 @@ function getRequestById(requestId: string) {
   return request;
 }
 
+function matchesBranchOfficeOwnership(
+  office: OfficeAccount,
+  record: { branchOfficeId: string; branchOfficeName: string }
+) {
+  if (office.role === "HQ") {
+    return true;
+  }
+
+  return record.branchOfficeId === office.id || record.branchOfficeName === office.officeName;
+}
+
 function filterRequestsForOffice(office: OfficeAccount) {
   const store = getSystemStore();
 
@@ -696,7 +736,7 @@ function filterRequestsForOffice(office: OfficeAccount) {
     return store.requests;
   }
 
-  return store.requests.filter((request) => request.branchOfficeId === office.id);
+  return store.requests.filter((request) => matchesBranchOfficeOwnership(office, request));
 }
 
 function getRequestEligibleProjects(office: OfficeAccount) {
@@ -704,13 +744,11 @@ function getRequestEligibleProjects(office: OfficeAccount) {
   const store = getSystemStore();
 
   return projects.filter((project) => {
-    const existingRequest = store.requests.find((request) => request.projectId === project.id);
+    const hasActiveRequest = store.requests.some(
+      (request) => request.projectId === project.id && request.status !== "Rejected"
+    );
 
-    if (!existingRequest) {
-      return project.lifecycleState !== "Completed";
-    }
-
-    return existingRequest.status === "Rejected";
+    return project.lifecycleState !== "Completed" && !hasActiveRequest;
   });
 }
 
@@ -721,7 +759,7 @@ function filterProjectsForOffice(office: OfficeAccount) {
     return store.projects;
   }
 
-  return store.projects.filter((project) => project.branchOfficeId === office.id);
+  return store.projects.filter((project) => matchesBranchOfficeOwnership(office, project));
 }
 
 function filterIssuesForOffice(office: OfficeAccount) {
@@ -879,24 +917,38 @@ export async function createRequestApplication(
 ) {
   ensureBranchUser(office);
   const store = getSystemStore();
-  const project = store.projects.find((entry) => entry.id === input.projectId);
+  const project = input.projectId
+    ? store.projects.find((entry) => entry.id === input.projectId)
+    : null;
 
-  if (!project) {
+  if (input.projectId && !project) {
     throw new Error("Project not found.");
   }
 
-  if (project.branchOfficeId !== office.id) {
+  if (project && !matchesBranchOfficeOwnership(office, project)) {
     throw new Error("Branch Office can only submit requests for its own projects.");
   }
 
-  if (store.requests.some((request) => request.projectId === project.id && request.status !== "Rejected")) {
-    throw new Error("An active request application already exists for this project.");
-  }
-
   const applicationText = sanitizeText(input.applicationText);
+  const projectSubject = sanitizeText(input.projectTitle ?? "") || project?.subject || "";
+
+  if (!projectSubject) {
+    throw new Error("Project title is required.");
+  }
 
   if (!applicationText) {
     throw new Error("Request application text is required.");
+  }
+
+  if (
+    store.requests.some(
+      (request) =>
+        matchesBranchOfficeOwnership(office, request) &&
+        request.projectSubject.toLowerCase() === projectSubject.toLowerCase() &&
+        request.status !== "Rejected"
+    )
+  ) {
+    throw new Error("An active request application already exists for this project title.");
   }
 
   const attachments = normalizeAttachments(input.attachments ?? []);
@@ -906,7 +958,7 @@ export async function createRequestApplication(
   const ai = await runRequestApprovalAi({
     requestPrompt: store.requestConfig.requestAnalysisPrompt,
     recommendationPrompt: store.requestConfig.requestRecommendationPrompt,
-    projectSubject: project.subject,
+    projectSubject,
     branchOfficeName: office.officeName,
     applicationText,
     attachments,
@@ -916,10 +968,10 @@ export async function createRequestApplication(
   const createdAt = nowIso();
   const request: RequestApplicationRecord = {
     id: createId(),
-    projectId: project.id,
-    projectSubject: project.subject,
-    workflowId: project.workflowId,
-    workflowName: project.workflowName,
+    projectId: project?.id ?? null,
+    projectSubject,
+    workflowId: project?.workflowId ?? null,
+    workflowName: project?.workflowName ?? null,
     branchOfficeId: office.id,
     branchOfficeName: office.officeName,
     createdByOfficeId: office.id,
@@ -939,6 +991,13 @@ export async function createRequestApplication(
     decision: null,
     statusHistory: [
       {
+        status: "AI Processing",
+        changedAt: createdAt,
+        changedByOfficeId: office.id,
+        changedByOfficeName: office.officeName,
+        note: "AI generated the request report, extraction, validation result, and recommendation."
+      },
+      {
         status: "Waiting for Approval",
         changedAt: createdAt,
         changedByOfficeId: office.id,
@@ -951,16 +1010,20 @@ export async function createRequestApplication(
   };
 
   store.requests.unshift(request);
-  project.status = "Waiting for Approval";
-  project.updatedAt = createdAt;
-  project.decision = null;
-  project.statusHistory.push({
-    status: "Waiting for Approval",
-    changedAt: createdAt,
-    changedByOfficeId: office.id,
-    changedByOfficeName: office.officeName,
-    note: "Request application submitted with AI recommendation for HQ review."
-  });
+
+  if (project) {
+    project.status = "Waiting for Approval";
+    project.updatedAt = createdAt;
+    project.decision = null;
+    project.statusHistory.push({
+      status: "Waiting for Approval",
+      changedAt: createdAt,
+      changedByOfficeId: office.id,
+      changedByOfficeName: office.officeName,
+      note: "Request application submitted with AI recommendation for HQ review."
+    });
+  }
+
   saveSystemStore(store);
   return request;
 }
@@ -978,7 +1041,7 @@ export async function reapplyRequestApplication(
     throw new Error("Request application not found.");
   }
 
-  if (request.branchOfficeId !== office.id) {
+  if (!matchesBranchOfficeOwnership(office, request)) {
     throw new Error("Branch Office can only reapply its own rejected requests.");
   }
 
@@ -986,11 +1049,9 @@ export async function reapplyRequestApplication(
     throw new Error("Only rejected requests can be reapplied.");
   }
 
-  const project = store.projects.find((entry) => entry.id === request.projectId);
-
-  if (!project) {
-    throw new Error("Linked project not found.");
-  }
+  const project = request.projectId
+    ? store.projects.find((entry) => entry.id === request.projectId)
+    : null;
 
   const applicationText = sanitizeText(input.applicationText);
 
@@ -1005,7 +1066,7 @@ export async function reapplyRequestApplication(
   const ai = await runRequestApprovalAi({
     requestPrompt: store.requestConfig.requestAnalysisPrompt,
     recommendationPrompt: store.requestConfig.requestRecommendationPrompt,
-    projectSubject: project.subject,
+    projectSubject: request.projectSubject,
     branchOfficeName: office.officeName,
     applicationText,
     attachments,
@@ -1027,24 +1088,35 @@ export async function reapplyRequestApplication(
   request.appealCount += 1;
   request.decision = null;
   request.updatedAt = updatedAt;
-  request.statusHistory.push({
-    status: "Waiting for Approval",
-    changedAt: updatedAt,
-    changedByOfficeId: office.id,
-    changedByOfficeName: office.officeName,
-    note: `Rejected request reapplied as cycle ${request.appealCount}.`
-  });
+  request.statusHistory.push(
+    {
+      status: "AI Processing",
+      changedAt: updatedAt,
+      changedByOfficeId: office.id,
+      changedByOfficeName: office.officeName,
+      note: `AI reran the request workflow for reapplication cycle ${request.appealCount}.`
+    },
+    {
+      status: "Waiting for Approval",
+      changedAt: updatedAt,
+      changedByOfficeId: office.id,
+      changedByOfficeName: office.officeName,
+      note: `Rejected request reapplied as cycle ${request.appealCount}.`
+    }
+  );
 
-  project.status = "Waiting for Approval";
-  project.updatedAt = updatedAt;
-  project.decision = null;
-  project.statusHistory.push({
-    status: "Waiting for Approval",
-    changedAt: updatedAt,
-    changedByOfficeId: office.id,
-    changedByOfficeName: office.officeName,
-    note: `Request application reapplied after rejection, cycle ${request.appealCount}.`
-  });
+  if (project) {
+    project.status = "Waiting for Approval";
+    project.updatedAt = updatedAt;
+    project.decision = null;
+    project.statusHistory.push({
+      status: "Waiting for Approval",
+      changedAt: updatedAt,
+      changedByOfficeId: office.id,
+      changedByOfficeName: office.officeName,
+      note: `Request application reapplied after rejection, cycle ${request.appealCount}.`
+    });
+  }
 
   saveSystemStore(store);
   return request;
@@ -1066,11 +1138,9 @@ export function decideRequestApplication(
     throw new Error("Request application not found.");
   }
 
-  const project = store.projects.find((entry) => entry.id === request.projectId);
-
-  if (!project) {
-    throw new Error("Linked project not found.");
-  }
+  const project = request.projectId
+    ? store.projects.find((entry) => entry.id === request.projectId)
+    : null;
 
   const updatedAt = nowIso();
   const decision: RequestDecision = {
@@ -1095,25 +1165,27 @@ export function decideRequestApplication(
         : "HQ rejected the request application and returned comments."
   });
 
-  project.status = input.decision;
-  project.updatedAt = updatedAt;
-  project.decision = {
-    decision: input.decision,
-    comments: decision.comments,
-    decidedAt: decision.decidedAt,
-    decidedByOfficeId: office.id,
-    decidedByOfficeName: office.officeName
-  };
-  project.statusHistory.push({
-    status: input.decision,
-    changedAt: updatedAt,
-    changedByOfficeId: office.id,
-    changedByOfficeName: office.officeName,
-    note:
-      input.decision === "Approved"
-        ? "HQ approved the project request application."
-        : "HQ rejected the project request application."
-  });
+  if (project) {
+    project.status = input.decision;
+    project.updatedAt = updatedAt;
+    project.decision = {
+      decision: input.decision,
+      comments: decision.comments,
+      decidedAt: decision.decidedAt,
+      decidedByOfficeId: office.id,
+      decidedByOfficeName: office.officeName
+    };
+    project.statusHistory.push({
+      status: input.decision,
+      changedAt: updatedAt,
+      changedByOfficeId: office.id,
+      changedByOfficeName: office.officeName,
+      note:
+        input.decision === "Approved"
+          ? "HQ approved the project request application."
+          : "HQ rejected the project request application."
+    });
+  }
 
   saveSystemStore(store);
   return request;
@@ -1142,6 +1214,7 @@ async function runRequestApprovalAi(args: {
   let finalReport = "";
   let finalExtraction: WorkflowExtraction | null = null;
   let finalValidation = null;
+  const requestWorkflow = buildRequestApprovalWorkflowConfig(args.requestPrompt);
 
   for (let attemptNumber = 1; attemptNumber <= 3; attemptNumber += 1) {
     const report = await generateRequestReportAttempt({
@@ -1154,50 +1227,12 @@ async function runRequestApprovalAi(args: {
       validatorFeedback: previousFeedback
     });
     const extraction = await generateWorkflowExtraction({
-      workflow: {
-        id: "request-workflow",
-        name: "Request Approval Workflow",
-        description: "AI-assisted request approval workflow",
-        createdByOfficeId: "",
-        createdByOfficeName: "",
-        createdAt: "",
-        updatedAt: "",
-        lastRunAt: null,
-        runCount: 0,
-        projectCount: 0,
-        config: {
-          reportPrompt: args.requestPrompt,
-          extractorPrompt: "",
-          validatorPrompt: "",
-          projectBuilderPrompt: "",
-          phaseProgressPrompt: "",
-          phaseBuilderPrompt: ""
-        }
-      },
+      workflow: requestWorkflow,
       report,
       unstructuredInput: combinedInput
     });
     const validation = await generateWorkflowValidation({
-      workflow: {
-        id: "request-workflow",
-        name: "Request Approval Workflow",
-        description: "AI-assisted request approval workflow",
-        createdByOfficeId: "",
-        createdByOfficeName: "",
-        createdAt: "",
-        updatedAt: "",
-        lastRunAt: null,
-        runCount: 0,
-        projectCount: 0,
-        config: {
-          reportPrompt: args.requestPrompt,
-          extractorPrompt: "",
-          validatorPrompt: "",
-          projectBuilderPrompt: "",
-          phaseProgressPrompt: "",
-          phaseBuilderPrompt: ""
-        }
-      },
+      workflow: requestWorkflow,
       extraction,
       unstructuredInput: combinedInput,
       attemptNumber

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   AppShell,
   FileUploadBox,
+  FormField,
   PrimaryButton,
   SecondaryButton,
   SelectField,
@@ -25,7 +26,6 @@ import { useDemoSession } from "@/src/client/use-demo-session";
 import { databaseAttachmentOptions } from "@/src/modules/system/database-options";
 import type {
   DatabasePayload,
-  ProjectRecord,
   RequestApplicationRecord,
   RequestPromptConfig,
   RequestsPayload
@@ -37,7 +37,7 @@ export function RequestsPage() {
   const [payload, setPayload] = useState<RequestsPayload | null>(null);
   const [database, setDatabase] = useState<DatabasePayload | null>(null);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
-  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+  const [projectTitle, setProjectTitle] = useState("");
   const [applicationText, setApplicationText] = useState("");
   const [applicationAttachments, setApplicationAttachments] = useState<FileList | null>(null);
   const [applicationDatabasePaths, setApplicationDatabasePaths] = useState<string[]>([]);
@@ -88,11 +88,6 @@ export function RequestsPage() {
             ? current
             : requestsData.requests[0]?.id ?? null
         );
-        setSelectedProjectId((current) =>
-          requestsData.availableProjects.some((project) => project.id === current)
-            ? current
-            : requestsData.availableProjects[0]?.id ?? ""
-        );
       } catch (loadError) {
         if (active) {
           setFeedback(loadError instanceof Error ? loadError.message : "Failed to load requests.");
@@ -129,7 +124,6 @@ export function RequestsPage() {
 
   async function reloadRequests(options?: {
     selectedRequestId?: string | null;
-    selectedProjectId?: string;
   }) {
     if (!session) {
       return;
@@ -143,17 +137,12 @@ export function RequestsPage() {
         ? options.selectedRequestId
         : requestsData.requests[0]?.id ?? null
     );
-    setSelectedProjectId(() =>
-      options?.selectedProjectId !== undefined
-        ? options.selectedProjectId
-        : requestsData.availableProjects[0]?.id ?? ""
-    );
   }
 
   async function handleSubmitApplication(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!session || !selectedProjectId) {
+    if (!session) {
       return;
     }
 
@@ -165,13 +154,14 @@ export function RequestsPage() {
         method: "POST",
         session,
         json: {
-          projectId: selectedProjectId,
+          projectTitle,
           applicationText,
           attachments: await filesToAttachmentReferences(applicationAttachments),
           selectedDatabasePaths: applicationDatabasePaths
         }
       });
 
+      setProjectTitle("");
       setApplicationText("");
       setApplicationAttachments(null);
       setApplicationDatabasePaths([]);
@@ -340,9 +330,9 @@ export function RequestsPage() {
       tone: "error" as const
     },
     {
-      label: "Eligible Projects",
+      label: "Linked Projects",
       value: payload?.availableProjects.length ?? 0,
-      helper: "Projects that can be used for a fresh request application.",
+      helper: "Existing branch projects that are still open and can be linked to a request.",
       tone: "info" as const
     }
   ];
@@ -355,7 +345,7 @@ export function RequestsPage() {
       description={
         isHq
           ? "Configure request prompts, inspect AI recommendation packets, and make the final HQ decision."
-          : "Submit request applications for projects, attach support context, and reapply rejected requests."
+          : "Submit request applications to HQ, attach support context, and reapply rejected requests."
       }
     >
       {feedback ? (
@@ -386,7 +376,7 @@ export function RequestsPage() {
       {isHq ? (
         <PageSection
           title="Request AI configuration"
-          description="Preset prompt 7 analyzes the request application. Preset prompt 8 turns validated information into an approval recommendation."
+          description="Preset prompt 7 analyzes the request application. Shared preset prompt 2 extracts information, shared preset prompt 3 validates it, and preset prompt 8 turns validated information into an approval recommendation."
         >
           <form className="grid gap-4" onSubmit={handleSaveConfig}>
             <TextAreaField
@@ -418,25 +408,17 @@ export function RequestsPage() {
       ) : (
         <PageSection
           title="Submit request application"
-          description="Choose a project, write the request application, attach support documents, and optionally include structured company data."
+          description="Type a project title, write the request application, attach support documents, and optionally include structured company data."
         >
           <form className="grid gap-4" onSubmit={handleSubmitApplication}>
-            <SelectField
+            <FormField
               label="Project"
-              value={selectedProjectId}
-              onChange={(event) => setSelectedProjectId(event.target.value)}
-              disabled={(payload?.availableProjects.length ?? 0) === 0}
-              hint="Only projects without an active request appear here."
-            >
-              {(payload?.availableProjects.length ?? 0) === 0 ? (
-                <option value="">No eligible projects available</option>
-              ) : null}
-              {(payload?.availableProjects ?? []).map((project: ProjectRecord) => (
-                <option key={project.id} value={project.id}>
-                  {project.subject} - {project.branchOfficeName}
-                </option>
-              ))}
-            </SelectField>
+              required
+              value={projectTitle}
+              onChange={(event) => setProjectTitle(event.target.value)}
+              placeholder="Type the project title"
+              hint="Enter the project title you want to submit to HQ."
+            />
             <TextAreaField
               label="Request application"
               required
@@ -461,7 +443,6 @@ export function RequestsPage() {
             <PrimaryButton
               loading={submittingApplication}
               type="submit"
-              disabled={(payload?.availableProjects.length ?? 0) === 0}
             >
               Submit request
             </PrimaryButton>
@@ -541,12 +522,14 @@ export function RequestsPage() {
                 </div>
                 <p className="mt-3 text-body text-synapse-text">{selectedRequest.applicationText}</p>
                 <div className="mt-4 flex flex-wrap gap-3">
-                  <PrimaryButton
-                    type="button"
-                    onClick={() => router.push(`/projects/${selectedRequest.projectId}`)}
-                  >
-                    Open project
-                  </PrimaryButton>
+                  {selectedRequest.projectId ? (
+                    <PrimaryButton
+                      type="button"
+                      onClick={() => router.push(`/projects/${selectedRequest.projectId}`)}
+                    >
+                      Open project
+                    </PrimaryButton>
+                  ) : null}
                   {selectedRequest.workflowId ? (
                     <SecondaryButton
                       type="button"

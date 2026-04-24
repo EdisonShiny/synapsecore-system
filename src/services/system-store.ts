@@ -207,7 +207,7 @@ function normalizeWorkflowRun(run: Partial<WorkflowRunRecord>, index: number): W
 function normalizeRequest(request: Partial<RequestApplicationRecord>, index: number): RequestApplicationRecord {
   return {
     id: request.id ?? `request-${index + 1}`,
-    projectId: request.projectId ?? "",
+    projectId: request.projectId ?? null,
     projectSubject: request.projectSubject ?? "",
     workflowId: request.workflowId ?? null,
     workflowName: request.workflowName ?? null,

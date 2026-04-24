@@ -186,7 +186,7 @@ export type RequestDecision = {
 };
 
 export type RequestStatusHistoryEntry = {
-  status: RequestApplicationStatus;
+  status: WorkflowStatus;
   changedAt: string;
   changedByOfficeId: string;
   changedByOfficeName: string;
@@ -195,7 +195,7 @@ export type RequestStatusHistoryEntry = {
 
 export type RequestApplicationRecord = {
   id: string;
-  projectId: string;
+  projectId: string | null;
   projectSubject: string;
   workflowId: string | null;
   workflowName: string | null;
@@ -532,7 +532,8 @@ export type ProgressProjectPhaseInput = {
 };
 
 export type CreateRequestApplicationInput = {
-  projectId: string;
+  projectId?: string;
+  projectTitle?: string;
   applicationText: string;
   attachments: AttachmentReference[];
   selectedDatabasePaths: string[];
