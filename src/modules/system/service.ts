@@ -22,6 +22,10 @@ import {
   getSystemStore,
   saveSystemStore
 } from "@/src/services/system-store";
+import {
+  PROMPT_7_APPROVAL_DECISION,
+  PROMPT_8_ESCALATION
+} from "@/src/modules/ai/structured-prompts";
 import type {
   AppealProjectInput,
   AttachmentReference,
@@ -200,11 +204,9 @@ function validateWorkflowConfig(config: WorkflowPromptConfig) {
   return normalized;
 }
 
-const requestExtractorPrompt =
-  "You are preset prompt 2 for the request approval workflow. Extract the most important grounded facts from the request report. Return the key approval scope, operational need, measurable evidence, business impact, delivery constraints, and any critical support context without exaggeration.";
+const requestExtractorPrompt = PROMPT_7_APPROVAL_DECISION.systemPrompt;
 
-const requestValidatorPrompt =
-  "You are preset prompt 3 for the request approval workflow. Validate whether the extracted facts are actually grounded in the request application, unstructured support inputs, attached files, and selected structured company data. Reduce the effect of adjectives, reject unsupported assumptions, return pass or fail, explain why, and provide retry guidance when the result is not grounded enough.";
+const requestValidatorPrompt = PROMPT_8_ESCALATION.systemPrompt;
 
 function buildRequestApprovalWorkflowConfig(requestPrompt: string): WorkflowRecord {
   return {

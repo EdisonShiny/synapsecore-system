@@ -1,5 +1,14 @@
 import { getSchema } from "./schemas";
 import type { AiModule, PromptContext, PromptPair } from "./types";
+import {
+  PROMPT_1_INTAKE,
+  PROMPT_2_VALIDATION,
+  PROMPT_3_ANALYSIS,
+  PROMPT_4_PROJECT_CREATION,
+  PROMPT_5_DECISION_MAKING,
+  PROMPT_7_APPROVAL_DECISION,
+  PROMPT_8_ESCALATION
+} from "./structured-prompts";
 
 function stableJson(value: unknown): string {
   return JSON.stringify(value ?? null, null, 2);
@@ -38,14 +47,14 @@ export const AI_PROMPTS: Record<AiModule, PromptPair> = {
   input_understanding: {
     system: [
       `You are the Input Understanding Module for SynapseCore System.`,
-      `Role of AI: workflow analyst and structured operations reasoning engine.`,
+      `Role: ${PROMPT_1_INTAKE.role}`,
+      `Task: ${PROMPT_1_INTAKE.task}`,
+      ``,
       `Business context: SynapseCore System coordinates projects between HQ and Branch Offices through Input -> Project -> Phase -> Plan -> Validate -> Execute -> Improve.`,
       `Current workflow stage: Input.`,
-      `Your job is to convert unstructured business input into structured operational understanding for ai_analysis.`,
-      `Stay grounded in provided input only.`,
-      `Do not behave like a chatbot. Do not ask follow-up questions. Do not write advice outside JSON.`,
-      `Extract issue_type, business_area, branch, urgency, summary, risks, opportunities, missing_information, confidence_score, and suggest_project_creation.`,
-      `Confidence logic: 80-100 when the issue, branch, evidence, and direction are clear; 50-79 when some details are missing but direction is clear; 0-49 when critical facts are missing or contradictory.`,
+      ``,
+      PROMPT_1_INTAKE.systemPrompt,
+      ``,
       `Return strict JSON only with root key "input_understanding".`
     ].join("\n"),
     userTemplate: (context) =>
@@ -58,14 +67,14 @@ export const AI_PROMPTS: Record<AiModule, PromptPair> = {
   project_identification: {
     system: [
       `You are the Project Identification Module for SynapseCore System.`,
-      `Role of AI: structured decision-support engine for enterprise operations.`,
+      `Role: ${PROMPT_4_PROJECT_CREATION.role}`,
+      `Task: ${PROMPT_4_PROJECT_CREATION.task}`,
+      ``,
       `Business context: SynapseCore System turns branch input and ai_analysis into project recommendations for HQ and Branch Office workflows.`,
       `Current workflow stage: Project.`,
-      `Your job is to decide whether a formal project should be created from the provided input and ai_analysis.`,
-      `Stay grounded in provided input only.`,
-      `Do not create project details that are not supported by the input.`,
-      `Recommend owner only as "HQ" or "Branch Office". Recommend priority only as low, medium, high, or critical.`,
-      `If project creation is not justified, set should_create_project to false and keep project fields concise but still valid strings.`,
+      ``,
+      PROMPT_4_PROJECT_CREATION.systemPrompt,
+      ``,
       `Return strict JSON only with root key "project_identification".`
     ].join("\n"),
     userTemplate: (context) =>
@@ -98,14 +107,14 @@ export const AI_PROMPTS: Record<AiModule, PromptPair> = {
   validation: {
     system: [
       `You are the Validation / Hallucination Limiter Module for SynapseCore System.`,
-      `Role of AI: groundedness validator and risk control assistant.`,
+      `Role: ${PROMPT_2_VALIDATION.role}`,
+      `Task: ${PROMPT_2_VALIDATION.task}`,
+      ``,
       `Business context: SynapseCore System must prevent unsupported operational plans from moving to approval or execution.`,
       `Current workflow stage: Validate.`,
-      `Your job is to compare the proposed phase plan against the provided input, ai_analysis, project context, and available evidence.`,
-      `Flag unsupported_claims when the plan contains facts, assumptions, quantities, dates, or causal claims not grounded in provided input.`,
-      `Flag missing_information when required facts are absent.`,
-      `Flag contradiction_flags when two provided facts conflict.`,
-      `Recommend human review whenever critical information is missing, groundedness is below 70, estimated risk is high, or actions could affect pricing, stock, customer commitments, compliance, or branch escalation.`,
+      ``,
+      PROMPT_2_VALIDATION.systemPrompt,
+      ``,
       `Return strict JSON only with root key "validation".`
     ].join("\n"),
     userTemplate: (context) =>
@@ -136,15 +145,15 @@ export const AI_PROMPTS: Record<AiModule, PromptPair> = {
   approval_recommendation: {
     system: [
       `You are the Approval Recommendation Module for SynapseCore System.`,
-      `Role of AI: structured decision-support engine for HQ approval workflow.`,
+      `Role: ${PROMPT_5_DECISION_MAKING.role}`,
+      `Task: ${PROMPT_5_DECISION_MAKING.task}`,
+      ``,
       `Business context: SynapseCore System supports HQ in approving, rejecting, requesting revision, or escalating operational requests.`,
       `Current workflow stage: Approval.`,
-      `Your job is to recommend a decision for HQ based on the approval request, project context, phase plan, validation results, and execution evidence if provided.`,
-      `Decision recommendation must be exactly approved, rejected, revise_requested, or escalated.`,
-      `Use revise_requested when needed information is missing but the request may be reasonable.`,
-      `Use escalated when risk or urgency requires higher attention.`,
-      `Use rejected when the request is unsupported, contradictory, or too risky to proceed.`,
-      `Required human checks must list concrete checks HQ should complete before acting.`,
+      ``,
+      PROMPT_5_DECISION_MAKING.systemPrompt,
+      ``,
+      `For this workflow module, use the decision types: approved, rejected, revise_requested, or escalated.`,
       `Return strict JSON only with root key "approval_recommendation".`
     ].join("\n"),
     userTemplate: (context) =>
