@@ -393,10 +393,19 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
                     </PrimaryButton>
                   </form>
                 ) : (
-                  <div className="rounded-[22px] border border-synapse-border bg-white p-4 text-body text-synapse-muted">
-                    {project.status !== "Approved"
-                      ? "This project must be approved before phase progression can begin."
-                      : "This project is already completed."}
+                  <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+                    <p className="text-body text-synapse-muted">
+                      {project.status !== "Approved"
+                        ? "This project must be approved before phase progression can begin."
+                        : "This project is already completed."}
+                    </p>
+                    {project.status !== "Approved" ? (
+                      <div className="mt-4">
+                        <PrimaryButton type="button" onClick={() => router.push("/requests")}>
+                          Open requests window
+                        </PrimaryButton>
+                      </div>
+                    ) : null}
                   </div>
                 )}
               </div>

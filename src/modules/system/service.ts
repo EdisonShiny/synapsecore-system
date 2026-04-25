@@ -839,6 +839,14 @@ function getRequestEligibleProjects(office: OfficeAccount) {
   });
 }
 
+function getProjectApprovalsForOffice(office: OfficeAccount) {
+  return filterProjectsForOffice(office).filter(
+    (project) =>
+      project.lifecycleState !== "Completed" &&
+      (project.status === "Submitted" || project.status === "Waiting for Approval" || project.status === "Rejected")
+  );
+}
+
 function filterProjectsForOffice(office: OfficeAccount) {
   const store = getSystemStore();
 
@@ -1119,6 +1127,9 @@ export function getRequestsPayloadForOffice(office: OfficeAccount): RequestsPayl
     requests: [...filterRequestsForOffice(office)].sort((left, right) =>
       right.updatedAt.localeCompare(left.updatedAt)
     ),
+    projectApprovals: [...getProjectApprovalsForOffice(office)].sort((left, right) =>
+      right.updatedAt.localeCompare(left.updatedAt)
+    ),
     availableProjects: getRequestEligibleProjects(office),
     config: getRequestPromptConfig()
   };
@@ -1225,15 +1236,13 @@ export async function createRequestApplication(
   store.requests.unshift(request);
 
   if (project) {
-    project.status = "Waiting for Approval";
     project.updatedAt = createdAt;
-    project.decision = null;
     project.statusHistory.push({
-      status: "Waiting for Approval",
+      status: project.status,
       changedAt: createdAt,
       changedByOfficeId: office.id,
       changedByOfficeName: office.officeName,
-      note: "Request application submitted with AI recommendation for HQ review."
+      note: "A separate request application was submitted and linked to this project for HQ review."
     });
   }
 
@@ -1319,15 +1328,13 @@ export async function reapplyRequestApplication(
   );
 
   if (project) {
-    project.status = "Waiting for Approval";
     project.updatedAt = updatedAt;
-    project.decision = null;
     project.statusHistory.push({
-      status: "Waiting for Approval",
+      status: project.status,
       changedAt: updatedAt,
       changedByOfficeId: office.id,
       changedByOfficeName: office.officeName,
-      note: `Request application reapplied after rejection, cycle ${request.appealCount}.`
+      note: `The linked request application was reapplied after rejection, cycle ${request.appealCount}.`
     });
   }
 
@@ -1379,24 +1386,16 @@ export function decideRequestApplication(
   });
 
   if (project) {
-    project.status = input.decision;
     project.updatedAt = updatedAt;
-    project.decision = {
-      decision: input.decision,
-      comments: decision.comments,
-      decidedAt: decision.decidedAt,
-      decidedByOfficeId: office.id,
-      decidedByOfficeName: office.officeName
-    };
     project.statusHistory.push({
-      status: input.decision,
+      status: project.status,
       changedAt: updatedAt,
       changedByOfficeId: office.id,
       changedByOfficeName: office.officeName,
       note:
         input.decision === "Approved"
-          ? "HQ approved the project request application."
-          : "HQ rejected the project request application."
+          ? "HQ approved the separate request application linked to this project."
+          : "HQ rejected the separate request application linked to this project."
     });
   }
 

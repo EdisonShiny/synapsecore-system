@@ -475,6 +475,7 @@ export type WorkflowDetailPayload = {
 
 export type RequestsPayload = {
   requests: RequestApplicationRecord[];
+  projectApprovals: ProjectRecord[];
   availableProjects: ProjectRecord[];
   config: RequestPromptConfig;
 };

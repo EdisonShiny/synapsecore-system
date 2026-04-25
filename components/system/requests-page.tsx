@@ -27,6 +27,7 @@ import { useDemoSession } from "@/src/client/use-demo-session";
 import { buildDatabaseAttachmentTree } from "@/src/modules/system/database-options";
 import type {
   DatabasePayload,
+  ProjectRecord,
   RequestApplicationRecord,
   RequestPromptConfig,
   RequestsPayload
@@ -38,6 +39,7 @@ export function RequestsPage() {
   const [payload, setPayload] = useState<RequestsPayload | null>(null);
   const [database, setDatabase] = useState<DatabasePayload | null>(null);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+  const [selectedProjectApprovalId, setSelectedProjectApprovalId] = useState<string | null>(null);
   const [projectTitle, setProjectTitle] = useState("");
   const [applicationText, setApplicationText] = useState("");
   const [applicationAttachments, setApplicationAttachments] = useState<File[]>([]);
@@ -47,6 +49,8 @@ export function RequestsPage() {
   const [reapplyDatabasePaths, setReapplyDatabasePaths] = useState<string[]>([]);
   const [decision, setDecision] = useState<"Approved" | "Rejected">("Approved");
   const [decisionComments, setDecisionComments] = useState("");
+  const [projectDecision, setProjectDecision] = useState<"Approved" | "Rejected">("Approved");
+  const [projectDecisionComments, setProjectDecisionComments] = useState("");
   const [config, setConfig] = useState<RequestPromptConfig>({
     requestAnalysisPrompt: "",
     requestRecommendationPrompt: ""
@@ -57,6 +61,7 @@ export function RequestsPage() {
   const [submittingReapply, setSubmittingReapply] = useState(false);
   const [savingConfig, setSavingConfig] = useState(false);
   const [submittingDecision, setSubmittingDecision] = useState(false);
+  const [submittingProjectDecision, setSubmittingProjectDecision] = useState(false);
 
   const isHq = session?.user.role === "HQ";
 
@@ -89,6 +94,11 @@ export function RequestsPage() {
             ? current
             : requestsData.requests[0]?.id ?? null
         );
+        setSelectedProjectApprovalId((current) =>
+          requestsData.projectApprovals.some((project) => project.id === current)
+            ? current
+            : requestsData.projectApprovals[0]?.id ?? null
+        );
       } catch (loadError) {
         if (active) {
           setFeedback(loadError instanceof Error ? loadError.message : "Failed to load requests.");
@@ -111,6 +121,17 @@ export function RequestsPage() {
     () => payload?.requests.find((request) => request.id === selectedRequestId) ?? payload?.requests[0] ?? null,
     [payload, selectedRequestId]
   );
+  const selectedProjectApproval = useMemo(
+    () =>
+      payload?.projectApprovals.find((project) => project.id === selectedProjectApprovalId) ??
+      payload?.projectApprovals[0] ??
+      null,
+    [payload, selectedProjectApprovalId]
+  );
+  const selectedProjectCurrentPhase = useMemo(
+    () => selectedProjectApproval?.phases.find((phase) => phase.status === "Current") ?? null,
+    [selectedProjectApproval]
+  );
   const databaseAttachmentTree = useMemo(
     () => (database ? buildDatabaseAttachmentTree(database.company) : []),
     [database]
@@ -129,6 +150,7 @@ export function RequestsPage() {
 
   async function reloadRequests(options?: {
     selectedRequestId?: string | null;
+    selectedProjectApprovalId?: string | null;
   }) {
     if (!session) {
       return;
@@ -141,6 +163,11 @@ export function RequestsPage() {
       options?.selectedRequestId !== undefined
         ? options.selectedRequestId
         : requestsData.requests[0]?.id ?? null
+    );
+    setSelectedProjectApprovalId(() =>
+      options?.selectedProjectApprovalId !== undefined
+        ? options.selectedProjectApprovalId
+        : requestsData.projectApprovals[0]?.id ?? null
     );
   }
 
@@ -278,6 +305,39 @@ export function RequestsPage() {
     }
   }
 
+  async function handleProjectDecision(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!session || !selectedProjectApproval) {
+      return;
+    }
+
+    setSubmittingProjectDecision(true);
+    setFeedback("");
+
+    try {
+      const data = await apiRequest<{ project: ProjectRecord }>(
+        `/api/projects/${selectedProjectApproval.id}/decision`,
+        {
+          method: "POST",
+          session,
+          json: {
+            decision: projectDecision,
+            comments: projectDecisionComments
+          }
+        }
+      );
+
+      setProjectDecisionComments("");
+      await reloadRequests({ selectedProjectApprovalId: data.project.id });
+      setFeedback(`Project ${projectDecision.toLowerCase()} successfully.`);
+    } catch (submitError) {
+      setFeedback(submitError instanceof Error ? submitError.message : "Project decision failed.");
+    } finally {
+      setSubmittingProjectDecision(false);
+    }
+  }
+
   const requestStats = [
     {
       label: isHq ? "Pending Review" : "Your Requests",
@@ -302,6 +362,15 @@ export function RequestsPage() {
       value: payload?.availableProjects.length ?? 0,
       helper: "Existing branch projects that are still open and can be linked to a request.",
       tone: "info" as const
+    },
+    {
+      label: isHq ? "Projects Awaiting HQ" : "Projects Pending HQ",
+      value:
+        payload?.projectApprovals.filter(
+          (project) => project.status === "Submitted" || project.status === "Waiting for Approval"
+        ).length ?? 0,
+      helper: "Workflow-created projects that still need a separate project approval decision.",
+      tone: "warning" as const
     }
   ];
 
@@ -756,6 +825,223 @@ export function RequestsPage() {
             <EmptyBlock
               title="Select a request"
               description="Choose one request from the list to inspect its AI packet and approval state."
+            />
+          )}
+        </PageSection>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
+        <PageSection
+          title={isHq ? "Project approvals" : "Projects pending approval"}
+          description={
+            isHq
+              ? "Approve or reject workflow-created projects here. This is separate from request application decisions."
+              : "Track whether HQ has approved each workflow-created project so phase progression can begin."
+          }
+        >
+          {loading ? <p className="text-body text-synapse-muted">Loading projects...</p> : null}
+          {!loading ? (
+            <RecordList
+              items={payload?.projectApprovals ?? []}
+              emptyTitle="No project approvals waiting"
+              emptyDescription={
+                isHq
+                  ? "Workflow-created projects that need HQ signoff will appear here."
+                  : "Projects that still need separate HQ approval will appear here."
+              }
+              renderItem={(project) => (
+                <button
+                  key={project.id}
+                  type="button"
+                  onClick={() => setSelectedProjectApprovalId(project.id)}
+                  className={`synapse-focus rounded-[22px] border p-4 text-left shadow-sm transition ${
+                    project.id === selectedProjectApproval?.id
+                      ? "border-blue-200 bg-blue-50"
+                      : "border-synapse-border bg-synapse-elevated hover:border-blue-200 hover:bg-white"
+                  }`}
+                >
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <p className="text-card-title text-synapse-text">{project.subject}</p>
+                      <p className="mt-1 text-body text-synapse-muted">
+                        {project.branchOfficeName}
+                        {project.workflowName ? ` | ${project.workflowName}` : ""}
+                      </p>
+                    </div>
+                    <WorkflowStatusBadge status={project.status} />
+                  </div>
+                  <p className="mt-3 text-body text-synapse-muted line-clamp-2">
+                    {project.description}
+                  </p>
+                  <p className="mt-3 text-meta text-synapse-muted">
+                    Updated {formatDateTime(project.updatedAt)}
+                  </p>
+                </button>
+              )}
+            />
+          ) : null}
+        </PageSection>
+
+        <PageSection
+          title={isHq ? "Project approval detail" : "Project approval status"}
+          description={
+            isHq
+              ? "Review the generated project and current phase before making the separate project decision."
+              : "Use this to confirm whether the project itself has been approved independently of any request application."
+          }
+        >
+          {selectedProjectApproval ? (
+            <div className="grid gap-4">
+              <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <p className="text-card-title text-synapse-text">{selectedProjectApproval.subject}</p>
+                    <p className="mt-1 text-body text-synapse-muted">
+                      {selectedProjectApproval.branchOfficeName}
+                      {selectedProjectApproval.workflowName
+                        ? ` | ${selectedProjectApproval.workflowName}`
+                        : ""}
+                    </p>
+                  </div>
+                  <WorkflowStatusBadge status={selectedProjectApproval.status} />
+                </div>
+                <p className="mt-3 text-body text-synapse-text">
+                  {selectedProjectApproval.description}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <PrimaryButton
+                    type="button"
+                    onClick={() => router.push(`/projects/${selectedProjectApproval.id}`)}
+                  >
+                    Open project
+                  </PrimaryButton>
+                  {selectedProjectApproval.workflowId ? (
+                    <SecondaryButton
+                      type="button"
+                      onClick={() => router.push(`/workflows/${selectedProjectApproval.workflowId}`)}
+                    >
+                      Open workflow
+                    </SecondaryButton>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+                  <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">
+                    Current phase
+                  </p>
+                  {selectedProjectCurrentPhase ? (
+                    <div className="mt-3 grid gap-3 text-body text-synapse-text">
+                      <p className="font-medium">{selectedProjectCurrentPhase.title}</p>
+                      <p>{selectedProjectCurrentPhase.objective}</p>
+                      <div className="grid gap-2 text-synapse-muted">
+                        {selectedProjectCurrentPhase.actionablePlans.map((plan, index) => (
+                          <p key={`${selectedProjectCurrentPhase.id}-approval-plan-${index}`}>
+                            {index + 1}. {plan}
+                          </p>
+                        ))}
+                      </div>
+                      <p className="text-synapse-muted">
+                        Expected outcome: {selectedProjectCurrentPhase.expectedOutcome}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-body text-synapse-muted">
+                      No current phase is stored for this project yet.
+                    </p>
+                  )}
+                </div>
+                <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+                  <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">
+                    Project report summary
+                  </p>
+                  <p className="mt-3 text-body text-synapse-text">
+                    {selectedProjectApproval.report.projectDescription}
+                  </p>
+                  <p className="mt-3 text-body text-synapse-muted">
+                    AI advice: {selectedProjectApproval.report.aiAdvice}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+                <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">
+                  Project approval history
+                </p>
+                <div className="mt-3 grid gap-3">
+                  {selectedProjectApproval.statusHistory.map((entry, index) => (
+                    <div
+                      key={`${selectedProjectApproval.id}-${index}-${entry.changedAt}`}
+                      className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4"
+                    >
+                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                        <WorkflowStatusBadge status={entry.status} />
+                        <p className="text-meta text-synapse-muted">
+                          {formatDateTime(entry.changedAt)}
+                        </p>
+                      </div>
+                      <p className="mt-3 text-body text-synapse-text">{entry.note}</p>
+                      <p className="mt-2 text-meta text-synapse-muted">
+                        {entry.changedByOfficeName}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {isHq &&
+              (selectedProjectApproval.status === "Submitted" ||
+                selectedProjectApproval.status === "Waiting for Approval") ? (
+                <form
+                  className="grid gap-4 rounded-[22px] border border-synapse-border bg-white p-4"
+                  onSubmit={handleProjectDecision}
+                >
+                  <SelectField
+                    label="Project decision"
+                    value={projectDecision}
+                    onChange={(event) =>
+                      setProjectDecision(event.target.value as "Approved" | "Rejected")
+                    }
+                  >
+                    <option value="Approved">Approved</option>
+                    <option value="Rejected">Rejected</option>
+                  </SelectField>
+                  <TextAreaField
+                    label="HQ comment or reason"
+                    value={projectDecisionComments}
+                    onChange={(event) => setProjectDecisionComments(event.target.value)}
+                    hint="This controls whether the project can move into phase progression."
+                  />
+                  <PrimaryButton loading={submittingProjectDecision} type="submit">
+                    Submit project decision
+                  </PrimaryButton>
+                </form>
+              ) : null}
+
+              {selectedProjectApproval.decision ? (
+                <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+                  <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">
+                    Latest project decision
+                  </p>
+                  <p className="mt-3 text-body font-medium text-synapse-text">
+                    {selectedProjectApproval.decision.decision}
+                  </p>
+                  <p className="mt-2 text-body text-synapse-muted">
+                    {selectedProjectApproval.decision.comments ||
+                      "No additional HQ comment was provided."}
+                  </p>
+                  <p className="mt-3 text-meta text-synapse-muted">
+                    {selectedProjectApproval.decision.decidedByOfficeName} on{" "}
+                    {formatDateTime(selectedProjectApproval.decision.decidedAt)}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <EmptyBlock
+              title="Select a project"
+              description="Choose one workflow-created project to inspect or approve."
             />
           )}
         </PageSection>
