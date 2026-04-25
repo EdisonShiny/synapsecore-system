@@ -1,11 +1,16 @@
+# TEAM NAME: IT WORKS ON MY MACHINE
+- TEAM CODE: 106
+- TEAM MEMBERS: EDISON KONG BANG JEAN (LEADER), DARREN WONGH CHEE LIANG, GOH JUN TECK, LIU YOU ZHENG, LIU TIAN EN
+- PROJECT NAME: Synapsecore System
+
+# All submissions
+
+
 # synapsecore-system
 
 SynapseCore System is a Next.js application for HQ and Branch Office coordination through AI-assisted workflows, requests, approvals, project phases, planning insight, and structured demo data.
 
 ## Overview
-
-The current app is no longer just a frontend design system. It is a working mock-first workflow platform with:
-
 - role-based login for `HQ` and `Branch Office`
 - workflow creation and workflow execution
 - AI-assisted project generation with validation and retry handling
