@@ -14,6 +14,9 @@
 ## Pick Desk Slides
 [Pitch Deck](PICK%20DECK_SynapseCore%20System.pdf)
 
+## 10-minute Pitching Video With Demo (MP4)
+[Google Drive for video](https://drive.google.com/drive/folders/1ExDAWW5rVA183hwlQHl4nhWWiCzY1f5Y?usp=drive_link)
+
 # SynapseCore System
 
 SynapseCore System is a website for HQ and Branch Office coordination through AI-assisted workflows, requests, approvals, project phases, planning insight, and structured demo data.
