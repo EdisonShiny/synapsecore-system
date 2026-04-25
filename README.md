@@ -12,34 +12,19 @@
 ## Pick Desk Slides
 [Pitch Deck](PICK%20DECK_SynapseCore%20System.pdf)
 
-# synapsecore-system
+# SynapseCore System
 
-SynapseCore System is a Next.js application for HQ and Branch Office coordination through AI-assisted workflows, requests, approvals, project phases, planning insight, and structured demo data.
+SynapseCore System is a website for HQ and Branch Office coordination through AI-assisted workflows, requests, approvals, project phases, planning insight, and structured demo data.
 
 ## Overview
 - role-based login for `HQ` and `Branch Office`
 - workflow creation and workflow execution
 - AI-assisted project generation with validation and retry handling
-- request submission, rejection, and reapply flows
+- request submission, rejection
 - HQ approval decisions for requests and workflow-created projects
 - project phase progression and phase report generation
 - planning and validation insight
 - database browsing and editing
-- office settings and live AI configuration
-
-The default runtime is demo-friendly and works in `mock` mode without external AI credentials.
-
-## Demo Accounts
-
-Built-in demo sign-in options:
-
-- `hq@synapsecore.test`
-- `branch@synapsecore.test`
-
-Allowed roles are only:
-
-- `HQ`
-- `Branch Office`
 
 ## Tech Stack
 
