@@ -58,13 +58,12 @@ Open:
 http://localhost:3000/login
 ```
 
-Useful checks:
-
-```bash
-npm run build
-npm run lint
-npm run typecheck
-```
+Before starting testing or running the website, you must insert your API key first (for privacy reasons, we do not provide our own API key):
+- Log in as HQ and access the HQ Dashboard
+- Go to Settings and locate API Configuration
+- Enter your API key in the “AI API Key” field
+- Wait until the Live AI status on the left side turns green (this means the AI is ready)
+- You can now start using all features of the website
 
 ## Main App Routes
 
