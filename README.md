@@ -1,6 +1,6 @@
 # synapsecore-system
 
-AI workflow system for HQ and Branch coordination
+AI-Powered Agentic Workflow Automation for HQ and Branch Coordination
 
 ## SynapseCore System Design System
 
