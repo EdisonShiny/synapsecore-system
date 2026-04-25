@@ -61,42 +61,6 @@ npm run lint
 npm run typecheck
 ```
 
-## Runtime Configuration
-
-Default `.env.example`:
-
-```env
-SYNAPSECORE_MODE=mock
-ILMU_API_BASE_URL=
-ILMU_API_KEY=
-ILMU_MODEL=
-ZAI_API_URL=
-ZAI_API_KEY=
-ZAI_MODEL=
-DATABASE_URL=
-```
-
-### Runtime Modes
-
-- `SYNAPSECORE_MODE=mock`
-  - uses deterministic demo behavior
-  - does not require external AI configuration
-
-- `SYNAPSECORE_MODE=real`
-  - enables live AI and database paths when configured
-
-### Live AI Configuration
-
-The main runtime config uses:
-
-- `ZAI_API_URL`
-- `ZAI_API_KEY`
-- `ZAI_MODEL`
-
-If required AI values are missing, the app falls back to mock AI automatically.
-
-`DATABASE_URL` is optional. If it is missing, the system keeps using the mock database path.
-
 ## Main App Routes
 
 Core routes:
