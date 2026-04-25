@@ -11,6 +11,7 @@ import { filesToAttachmentReferences } from "@/components/system/file-utils";
 import { formatDateTime } from "@/components/system/format";
 import { AiTransparencyPanel, EmptyBlock, PageSection, WorkflowStatusBadge } from "@/components/system/ui";
 import type { DatabasePayload, GeneratePhaseReportResult, ProjectPhaseRecord, ProjectRecord } from "@/types/system";
+import { buildPhaseReportPdf, buildPhaseReportPdfFileName } from "@/src/utils/pdf";
 
 function PhaseCard({
   phase,
@@ -155,6 +156,29 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
     () => project?.phases.find((phase) => phase.status === "Current") ?? null,
     [project]
   );
+
+  function downloadPhaseReportPdf(result: GeneratePhaseReportResult, projectSubject: string) {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const pdfBlob = buildPhaseReportPdf({
+      result,
+      projectSubject
+    });
+    const fileName = buildPhaseReportPdfFileName(projectSubject, result.phaseTitle);
+    const objectUrl = window.URL.createObjectURL(pdfBlob);
+    const link = document.createElement("a");
+
+    link.href = objectUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => {
+      window.URL.revokeObjectURL(objectUrl);
+    }, 1000);
+  }
   const databaseAttachmentTree = useMemo(
     () => (database ? buildDatabaseAttachmentTree(database.company) : []),
     [database]
@@ -229,7 +253,8 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
         }
       );
       setPhaseReportResult(data.result);
-      setFeedback("Phase report generated successfully.");
+      downloadPhaseReportPdf(data.result, project.subject);
+      setFeedback("Phase report generated successfully and downloaded as PDF.");
     } catch (submitError) {
       setFeedback(submitError instanceof Error ? submitError.message : "Phase report generation failed.");
     } finally {
@@ -323,6 +348,18 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
                     >
                       Generate phase report
                     </PrimaryButton>
+                    {phaseReportResult ? (
+                      <SecondaryButton
+                        type="button"
+                        onClick={() =>
+                          project
+                            ? downloadPhaseReportPdf(phaseReportResult, project.subject)
+                            : undefined
+                        }
+                      >
+                        Download PDF
+                      </SecondaryButton>
+                    ) : null}
                     {phaseReportResult ? (
                       <SecondaryButton type="button" onClick={handleCopyPhaseReport}>
                         {copiedPhaseReport ? "Copied" : "Copy report"}

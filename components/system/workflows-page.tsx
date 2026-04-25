@@ -2,10 +2,19 @@
 
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AppShell, FormField, PrimaryButton, TextAreaField } from "@/components";
+import { AppShell, FormField, PrimaryButton, SelectField, TextAreaField } from "@/components";
+import {
+  PromptGuideToggle,
+  getPromptFieldMeta
+} from "@/components/system/prompt-guide";
 import { apiRequest } from "@/src/client/api";
 import { useDemoSession } from "@/src/client/use-demo-session";
-import { sampleWorkflowTemplate } from "@/src/modules/system/sample-workflow";
+import {
+  defaultWorkflowPromptPreset,
+  getWorkflowPromptPreset,
+  type WorkflowPresetId,
+  workflowPromptPresets
+} from "@/src/modules/system/sample-workflow";
 import { formatDateTime } from "@/components/system/format";
 import { EmptyBlock, PageSection, RecordList, StatGrid } from "@/components/system/ui";
 import type { CreateWorkflowInput, WorkflowRecord } from "@/types/system";
@@ -29,6 +38,7 @@ export function WorkflowsPage() {
   const { session, loading: sessionLoading, signOut } = useDemoSession();
   const [workflows, setWorkflows] = useState<WorkflowRecord[]>([]);
   const [form, setForm] = useState<CreateWorkflowInput>(emptyWorkflowForm);
+  const [selectedPresetId, setSelectedPresetId] = useState<WorkflowPresetId>(defaultWorkflowPromptPreset.id);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -76,6 +86,10 @@ export function WorkflowsPage() {
       projects: workflows.reduce((total, workflow) => total + workflow.projectCount, 0)
     }),
     [workflows]
+  );
+  const selectedPreset = useMemo(
+    () => getWorkflowPromptPreset(selectedPresetId),
+    [selectedPresetId]
   );
 
   if (!session || sessionLoading) {
@@ -135,32 +149,64 @@ export function WorkflowsPage() {
         />
       </PageSection>
 
-      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+      <div className="grid gap-6">
         <PageSection
           title="Create workflow"
           description="These prompt fields define the AI pipeline for intake, validation, project creation, phase progression, and phase reporting."
           action={
-            <PrimaryButton type="button" onClick={() => setForm(sampleWorkflowTemplate)}>
-              Load sample workflow
-            </PrimaryButton>
+            <div className="grid w-full gap-3 md:w-[34rem] md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+              <div className="w-full">
+                <SelectField
+                  label="Preset workflow library"
+                  value={selectedPresetId}
+                  onChange={(event) => setSelectedPresetId(event.target.value as WorkflowPresetId)}
+                >
+                  {workflowPromptPresets.map((preset) => (
+                    <option key={preset.id} value={preset.id}>
+                      {preset.title}
+                    </option>
+                  ))}
+                </SelectField>
+              </div>
+              <PrimaryButton
+                type="button"
+                onClick={() =>
+                  setForm({
+                    ...selectedPreset.workflow,
+                    config: { ...selectedPreset.workflow.config }
+                  })
+                }
+              >
+                Load preset
+              </PrimaryButton>
+            </div>
           }
         >
           <form className="grid gap-4" onSubmit={handleCreate}>
+            <PromptGuideToggle variant="workflow" />
+            <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+              <p className="text-card-title text-synapse-text">{selectedPreset.title}</p>
+              <p className="mt-2 text-body text-synapse-muted">{selectedPreset.summary}</p>
+              <p className="mt-3 text-body text-synapse-text">
+                <span className="font-semibold">Fields used:</span> {selectedPreset.fieldsUsed.join(", ")}
+              </p>
+            </div>
             <FormField
               label="Workflow name"
               required
               value={form.name}
               onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+              hint="Name the workflow after the input type or business process it is meant to handle."
             />
             <TextAreaField
               label="Workflow description"
               required
               value={form.description}
               onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
-              hint="Explain what kind of unstructured input this workflow is meant to process."
+              hint="Describe what raw input this workflow receives, what business problem it solves, and what kind of projects or outcomes it should produce."
             />
             <TextAreaField
-              label="Preset prompt 1"
+              label={getPromptFieldMeta("reportPrompt").label}
               required
               value={form.config.reportPrompt}
               onChange={(event) =>
@@ -169,10 +215,10 @@ export function WorkflowsPage() {
                   config: { ...current.config, reportPrompt: event.target.value }
                 }))
               }
-              hint="Instruction for the first AI report generated from the raw input."
+              hint={getPromptFieldMeta("reportPrompt").hint}
             />
             <TextAreaField
-              label="Preset prompt 2"
+              label={getPromptFieldMeta("extractorPrompt").label}
               required
               value={form.config.extractorPrompt}
               onChange={(event) =>
@@ -181,10 +227,10 @@ export function WorkflowsPage() {
                   config: { ...current.config, extractorPrompt: event.target.value }
                 }))
               }
-              hint="Instruction for the extractor AI."
+              hint={getPromptFieldMeta("extractorPrompt").hint}
             />
             <TextAreaField
-              label="Preset prompt 3"
+              label={getPromptFieldMeta("validatorPrompt").label}
               required
               value={form.config.validatorPrompt}
               onChange={(event) =>
@@ -193,10 +239,10 @@ export function WorkflowsPage() {
                   config: { ...current.config, validatorPrompt: event.target.value }
                 }))
               }
-              hint="Instruction for the validation AI."
+              hint={getPromptFieldMeta("validatorPrompt").hint}
             />
             <TextAreaField
-              label="Preset prompt 4"
+              label={getPromptFieldMeta("projectBuilderPrompt").label}
               required
               value={form.config.projectBuilderPrompt}
               onChange={(event) =>
@@ -205,10 +251,10 @@ export function WorkflowsPage() {
                   config: { ...current.config, projectBuilderPrompt: event.target.value }
                 }))
               }
-              hint="Instruction for the project builder AI."
+              hint={getPromptFieldMeta("projectBuilderPrompt").hint}
             />
             <TextAreaField
-              label="Preset prompt 5"
+              label={getPromptFieldMeta("phaseProgressPrompt").label}
               required
               value={form.config.phaseProgressPrompt}
               onChange={(event) =>
@@ -217,10 +263,10 @@ export function WorkflowsPage() {
                   config: { ...current.config, phaseProgressPrompt: event.target.value }
                 }))
               }
-              hint="Instruction for the phase progression AI."
+              hint={getPromptFieldMeta("phaseProgressPrompt").hint}
             />
             <TextAreaField
-              label="Preset prompt 6"
+              label={getPromptFieldMeta("phaseBuilderPrompt").label}
               required
               value={form.config.phaseBuilderPrompt}
               onChange={(event) =>
@@ -229,10 +275,10 @@ export function WorkflowsPage() {
                   config: { ...current.config, phaseBuilderPrompt: event.target.value }
                 }))
               }
-              hint="Instruction for the phase builder AI."
+              hint={getPromptFieldMeta("phaseBuilderPrompt").hint}
             />
             <TextAreaField
-              label="Preset prompt 9"
+              label={getPromptFieldMeta("phaseReportPrompt").label}
               required
               value={form.config.phaseReportPrompt}
               onChange={(event) =>
@@ -241,7 +287,7 @@ export function WorkflowsPage() {
                   config: { ...current.config, phaseReportPrompt: event.target.value }
                 }))
               }
-              hint="Instruction for the phase report AI."
+              hint={getPromptFieldMeta("phaseReportPrompt").hint}
             />
             <PrimaryButton loading={submitting} type="submit">
               Create workflow

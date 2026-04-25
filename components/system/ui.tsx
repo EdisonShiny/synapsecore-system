@@ -10,16 +10,30 @@ export function PageSection({
   description,
   action,
   children,
-  className
+  className,
+  sectionId,
+  navigationTitle,
+  hideFromNavigation = false
 }: {
   title: string;
   description?: string;
   action?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  sectionId?: string;
+  navigationTitle?: string;
+  hideFromNavigation?: boolean;
 }) {
   return (
-    <section className={cn("grid gap-4 rounded-[24px] border border-synapse-border/90 bg-white/90 p-5 shadow-panel md:p-6", className)}>
+    <section
+      id={sectionId}
+      data-page-section={hideFromNavigation ? undefined : "true"}
+      data-section-title={navigationTitle ?? title}
+      className={cn(
+        "grid gap-4 scroll-mt-28 rounded-[24px] border border-synapse-border/90 bg-white/90 p-5 shadow-panel md:p-6",
+        className
+      )}
+    >
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h2 className="text-section-title text-synapse-text">{title}</h2>

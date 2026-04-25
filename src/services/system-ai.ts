@@ -49,6 +49,17 @@ function buildEvidence(inputs: AiEvidence[]): AiEvidence[] {
   return inputs.filter((item) => item.detail.trim().length > 0);
 }
 
+function normalizeReportDividers(value: string) {
+  return value
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/[ \t]*[═━─]{5,}[ \t]*/g, "\n------------\n")
+    .replace(/[ \t]*(?:[=\-]\s*){6,}[ \t]*/g, "\n------------\n")
+    .replace(/[ \t]*------------[ \t]*/g, "\n------------\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 export function createProjectAiReport(
   office: OfficeAccount,
   input: CreateProjectInput
@@ -1090,7 +1101,7 @@ export async function generatePhaseSummaryReport(args: {
       ? `The most recent validated outcome indicates: ${firstMeaningfulSentence(args.currentPhase.outcome, "Outcome evidence is available.")}`
       : "The current phase has not yet recorded a validated outcome, so the report focuses on plan readiness and prior validated progress."
   ];
-  const fallback = fallbackSections.join("\n\n");
+  const fallback = normalizeReportDividers(fallbackSections.join("\n\n"));
 
   try {
     const response = await requestLiveJson(
@@ -1099,7 +1110,9 @@ export async function generatePhaseSummaryReport(args: {
           "You generate management-ready phase reports for an AI workflow system.",
           args.workflow.config.phaseReportPrompt,
           "Return JSON only with one key: report.",
-          "The report must be formatted text that is easy to copy into a report or chat update."
+          "The report must be formatted text that is easy to copy into a report or chat update.",
+          "Use only plain ASCII divider lines like ------------. Do not use box-drawing characters or decorative Unicode separators.",
+          "Whenever you use a divider, it must be on its own line, with content separated above and below it."
         ].join("\n"),
         userPrompt: [
           `Project subject: ${args.project.subject}`,
@@ -1127,7 +1140,7 @@ export async function generatePhaseSummaryReport(args: {
           return null;
         }
 
-        return value.report.trim();
+        return normalizeReportDividers(value.report.trim());
       }
     );
 

@@ -15,20 +15,24 @@ import {
 } from "@/components/system/ui";
 import type { ProjectRecord, WorkflowStatus } from "@/types/system";
 
-const statusOptions: Array<"All" | WorkflowStatus> = [
+type ProjectStatusFilter = "All" | "Awaiting HQ" | Exclude<WorkflowStatus, "AI Processing" | "Submitted" | "Waiting for Approval">;
+
+const statusOptions: ProjectStatusFilter[] = [
   "All",
-  "Submitted",
-  "AI Processing",
-  "Waiting for Approval",
+  "Awaiting HQ",
   "Approved",
   "Rejected"
 ];
+
+function isAwaitingHq(project: ProjectRecord) {
+  return project.status === "Submitted" || project.status === "Waiting for Approval";
+}
 
 export function ProjectsPage() {
   const router = useRouter();
   const { session, loading: sessionLoading, signOut } = useDemoSession();
   const [projects, setProjects] = useState<ProjectRecord[]>([]);
-  const [statusFilter, setStatusFilter] = useState<(typeof statusOptions)[number]>("All");
+  const [statusFilter, setStatusFilter] = useState<ProjectStatusFilter>("All");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -70,15 +74,23 @@ export function ProjectsPage() {
   }, [session]);
 
   const filteredProjects = useMemo(() => {
-    return projects.filter((project) =>
-      statusFilter === "All" ? true : project.status === statusFilter
-    );
+    return projects.filter((project) => {
+      if (statusFilter === "All") {
+        return true;
+      }
+
+      if (statusFilter === "Awaiting HQ") {
+        return isAwaitingHq(project);
+      }
+
+      return project.status === statusFilter;
+    });
   }, [projects, statusFilter]);
 
   const counts = useMemo(
     () => ({
       total: projects.length,
-      pending: projects.filter((project) => project.status === "Waiting for Approval").length,
+      awaitingHq: projects.filter((project) => isAwaitingHq(project)).length,
       approved: projects.filter((project) => project.status === "Approved").length,
       rejected: projects.filter((project) => project.status === "Rejected").length
     }),
@@ -104,7 +116,7 @@ export function ProjectsPage() {
             <SelectField
               label="Status"
               value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value as (typeof statusOptions)[number])}
+              onChange={(event) => setStatusFilter(event.target.value as ProjectStatusFilter)}
             >
               {statusOptions.map((option) => (
                 <option key={option} value={option}>
@@ -124,9 +136,9 @@ export function ProjectsPage() {
               tone: "info"
             },
             {
-              label: "Waiting Approval",
-              value: counts.pending,
-              helper: "Projects created by workflows and still awaiting a decision.",
+              label: "Awaiting HQ",
+              value: counts.awaitingHq,
+              helper: "Submitted or resubmitted projects that still need an HQ decision.",
               tone: "warning"
             },
             {

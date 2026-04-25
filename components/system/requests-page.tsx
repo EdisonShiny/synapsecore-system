@@ -15,6 +15,10 @@ import { DatabaseContextSelector } from "@/components/system/database-context-se
 import { formatDateTime } from "@/components/system/format";
 import { filesToAttachmentReferences } from "@/components/system/file-utils";
 import {
+  PromptGuideToggle,
+  getPromptFieldMeta
+} from "@/components/system/prompt-guide";
+import {
   EmptyBlock,
   PageSection,
   RecordList,
@@ -25,6 +29,12 @@ import {
 import { apiRequest } from "@/src/client/api";
 import { useDemoSession } from "@/src/client/use-demo-session";
 import { buildDatabaseAttachmentTree } from "@/src/modules/system/database-options";
+import {
+  defaultWorkflowPromptPreset,
+  getWorkflowPromptPreset,
+  type WorkflowPresetId,
+  workflowPromptPresets
+} from "@/src/modules/system/sample-workflow";
 import type {
   DatabasePayload,
   ProjectRecord,
@@ -55,6 +65,7 @@ export function RequestsPage() {
     requestAnalysisPrompt: "",
     requestRecommendationPrompt: ""
   });
+  const [selectedPresetId, setSelectedPresetId] = useState<WorkflowPresetId>(defaultWorkflowPromptPreset.id);
   const [feedback, setFeedback] = useState("");
   const [loading, setLoading] = useState(true);
   const [submittingApplication, setSubmittingApplication] = useState(false);
@@ -135,6 +146,10 @@ export function RequestsPage() {
   const databaseAttachmentTree = useMemo(
     () => (database ? buildDatabaseAttachmentTree(database.company) : []),
     [database]
+  );
+  const selectedPreset = useMemo(
+    () => getWorkflowPromptPreset(selectedPresetId),
+    [selectedPresetId]
   );
 
   useEffect(() => {
@@ -338,11 +353,20 @@ export function RequestsPage() {
     }
   }
 
+  const pendingRequestCount =
+    payload?.requests.filter((request) => request.status === "Waiting for Approval").length ?? 0;
+  const pendingProjectApprovalCount =
+    payload?.projectApprovals.filter(
+      (project) => project.status === "Submitted" || project.status === "Waiting for Approval"
+    ).length ?? 0;
+
   const requestStats = [
     {
-      label: isHq ? "Pending Review" : "Your Requests",
-      value: payload?.requests.filter((request) => request.status === "Waiting for Approval").length ?? 0,
-      helper: isHq ? "Requests waiting for HQ action." : "Requests currently waiting for HQ review.",
+      label: isHq ? "HQ Review Queue" : "Pending HQ Actions",
+      value: pendingRequestCount + pendingProjectApprovalCount,
+      helper: isHq
+        ? "Request applications and workflow-created projects that still need HQ action."
+        : "Your requests and project approvals that are still waiting for HQ action.",
       tone: "warning" as const
     },
     {
@@ -362,15 +386,6 @@ export function RequestsPage() {
       value: payload?.availableProjects.length ?? 0,
       helper: "Existing branch projects that are still open and can be linked to a request.",
       tone: "info" as const
-    },
-    {
-      label: isHq ? "Projects Awaiting HQ" : "Projects Pending HQ",
-      value:
-        payload?.projectApprovals.filter(
-          (project) => project.status === "Submitted" || project.status === "Waiting for Approval"
-        ).length ?? 0,
-      helper: "Workflow-created projects that still need a separate project approval decision.",
-      tone: "warning" as const
     }
   ];
 
@@ -414,21 +429,57 @@ export function RequestsPage() {
         <PageSection
           title="Request AI configuration"
           description="Preset prompt 7 analyzes the request application. Shared preset prompt 2 extracts information, shared preset prompt 3 validates it, and preset prompt 8 turns validated information into an approval recommendation."
+          action={
+            <div className="grid w-full gap-3 md:w-[34rem] md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+              <div className="w-full">
+                <SelectField
+                  label="Preset prompt library"
+                  value={selectedPresetId}
+                  onChange={(event) => setSelectedPresetId(event.target.value as WorkflowPresetId)}
+                >
+                  {workflowPromptPresets.map((preset) => (
+                    <option key={preset.id} value={preset.id}>
+                      {preset.title}
+                    </option>
+                  ))}
+                </SelectField>
+              </div>
+              <SecondaryButton
+                type="button"
+                onClick={() =>
+                  setConfig({
+                    requestAnalysisPrompt: selectedPreset.requestPrompts.requestAnalysisPrompt,
+                    requestRecommendationPrompt: selectedPreset.requestPrompts.requestRecommendationPrompt
+                  })
+                }
+              >
+                Load preset
+              </SecondaryButton>
+            </div>
+          }
         >
           <form className="grid gap-4" onSubmit={handleSaveConfig}>
+            <PromptGuideToggle variant="request" />
+            <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+              <p className="text-card-title text-synapse-text">{selectedPreset.title}</p>
+              <p className="mt-2 text-body text-synapse-muted">{selectedPreset.summary}</p>
+              <p className="mt-3 text-body text-synapse-text">
+                <span className="font-semibold">Fields used:</span> {selectedPreset.fieldsUsed.join(", ")}
+              </p>
+            </div>
             <TextAreaField
-              label="Preset prompt 7"
+              label={getPromptFieldMeta("requestAnalysisPrompt").label}
               required
-              hint="Instruction for the request-analysis AI call."
+              hint={getPromptFieldMeta("requestAnalysisPrompt").hint}
               value={config.requestAnalysisPrompt}
               onChange={(event) =>
                 setConfig((current) => ({ ...current, requestAnalysisPrompt: event.target.value }))
               }
             />
             <TextAreaField
-              label="Preset prompt 8"
+              label={getPromptFieldMeta("requestRecommendationPrompt").label}
               required
-              hint="Instruction for the approval-recommendation AI call."
+              hint={getPromptFieldMeta("requestRecommendationPrompt").hint}
               value={config.requestRecommendationPrompt}
               onChange={(event) =>
                 setConfig((current) => ({

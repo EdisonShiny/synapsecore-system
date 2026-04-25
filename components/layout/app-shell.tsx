@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -48,6 +48,21 @@ type LegacyShellProps = {
   children: React.ReactNode;
 };
 
+type PageSectionNavItem = {
+  id: string;
+  label: string;
+};
+
+function slugifySectionTitle(value: string) {
+  const slug = value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return slug || "section";
+}
+
 export function PageContainer({ children, className }: { children: React.ReactNode; className?: string }) {
   return <div className={cn("grid gap-6", className)}>{children}</div>;
 }
@@ -64,7 +79,11 @@ export function SectionBlock({
   children: React.ReactNode;
 }) {
   return (
-    <section className="grid gap-4">
+    <section
+      data-page-section="true"
+      data-section-title={title}
+      className="grid gap-4 scroll-mt-28"
+    >
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h2 className="text-section-title text-synapse-text">{title}</h2>
@@ -132,6 +151,8 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
   const drawer = isCurrentProps ? null : props.drawer;
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [pageSections, setPageSections] = useState<PageSectionNavItem[]>([]);
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [aiHealth, setAiHealth] = useState<SystemAiHealthPayload>({
     status: "checking",
     summary: "Checking AI status",
@@ -140,6 +161,8 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
     configured: false,
     model: null
   });
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const sectionElementsRef = useRef<HTMLElement[]>([]);
   const initials =
     session.user.role === "HQ" ? "HQ" : session.user.officeName.slice(0, 2).toUpperCase();
 
@@ -181,6 +204,101 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
     };
   }, [session]);
 
+  useEffect(() => {
+    const containerElement = contentRef.current;
+
+    if (!containerElement) {
+      setPageSections([]);
+      setActiveSectionId(null);
+      return;
+    }
+
+    const contentElement: HTMLDivElement = containerElement;
+
+    let frame = 0;
+
+    function updateActiveSection() {
+      const sections = sectionElementsRef.current;
+
+      if (sections.length === 0) {
+        setActiveSectionId(null);
+        return;
+      }
+
+      const offset = 160;
+      let nextActiveId = sections[0].id;
+
+      for (const section of sections) {
+        if (section.getBoundingClientRect().top <= offset) {
+          nextActiveId = section.id;
+          continue;
+        }
+
+        break;
+      }
+
+      setActiveSectionId(nextActiveId);
+    }
+
+    function refreshSections() {
+      const sections = Array.from(
+        contentElement.querySelectorAll<HTMLElement>("[data-page-section='true']")
+      );
+      const slugCounts = new Map<string, number>();
+
+      sectionElementsRef.current = sections;
+
+      const nextSections = sections.map((section, index) => {
+        const label =
+          section.dataset.sectionTitle?.trim() ||
+          section.querySelector("h2")?.textContent?.trim() ||
+          `Section ${index + 1}`;
+        const slugBase = slugifySectionTitle(label);
+        const slugCount = (slugCounts.get(slugBase) ?? 0) + 1;
+        const generatedId = slugCount === 1 ? slugBase : `${slugBase}-${slugCount}`;
+        const id = section.id || generatedId;
+
+        slugCounts.set(slugBase, slugCount);
+        section.id = id;
+
+        return { id, label };
+      });
+
+      setPageSections(nextSections);
+      updateActiveSection();
+    }
+
+    function queueRefresh() {
+      cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(refreshSections);
+    }
+
+    function queueActiveUpdate() {
+      cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(updateActiveSection);
+    }
+
+    const mutationObserver = new MutationObserver(queueRefresh);
+
+    queueRefresh();
+    mutationObserver.observe(contentElement, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ["data-page-section", "data-section-title", "id"]
+    });
+    window.addEventListener("resize", queueRefresh);
+    window.addEventListener("scroll", queueActiveUpdate, { passive: true });
+
+    return () => {
+      cancelAnimationFrame(frame);
+      mutationObserver.disconnect();
+      window.removeEventListener("resize", queueRefresh);
+      window.removeEventListener("scroll", queueActiveUpdate);
+    };
+  }, [pathname]);
+
   function isSelected(href: string) {
     return pathname === href || pathname.startsWith(`${href}/`);
   }
@@ -194,7 +312,7 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
 
     if (aiHealth.status === "checking") {
       return (
-        <div className="rounded-[24px] border border-blue-200 bg-blue-50 p-4 text-blue-800 shadow-sm">
+        <div className="pointer-events-none select-none rounded-[24px] border border-blue-200 bg-blue-50 p-4 text-blue-800 shadow-sm">
           <div className="flex items-start gap-3">
             <Loader2 className="mt-0.5 h-4 w-4 animate-spin shrink-0" />
             <div>
@@ -211,7 +329,12 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
     const Icon = aiHealth.status === "live-ready" ? CheckCircle2 : AlertTriangle;
 
     return (
-      <div className={cn("rounded-[24px] border p-4 shadow-sm", toneStyles[aiHealth.status])}>
+      <div
+        className={cn(
+          "pointer-events-none select-none rounded-[24px] border p-4 shadow-sm",
+          toneStyles[aiHealth.status]
+        )}
+      >
         <div className="flex items-start gap-3">
           <Icon className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
@@ -224,6 +347,17 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
         </div>
       </div>
     );
+  }
+
+  function scrollToSection(sectionId: string) {
+    const section = sectionElementsRef.current.find((item) => item.id === sectionId);
+
+    if (!section) {
+      return;
+    }
+
+    setActiveSectionId(sectionId);
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function sidebarContent() {
@@ -347,9 +481,67 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
             </div>
           </div>
         </header>
-        <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 md:px-6 xl:px-8">
-          {props.children}
-          {drawer}
+        <main className="mx-auto w-full max-w-[96rem] px-4 py-6 md:px-6 xl:px-8">
+          <div
+            className={cn(
+              "grid items-start gap-6 xl:gap-8",
+              pageSections.length > 1 ? "xl:pr-[23rem] 2xl:pr-[24rem]" : null
+            )}
+          >
+            <div ref={contentRef} className="grid gap-6">
+              {props.children}
+              {drawer}
+            </div>
+            {pageSections.length > 1 ? (
+              <aside className="hidden xl:block xl:w-[17rem]">
+                <div className="fixed right-6 top-28 z-20 w-[17rem] rounded-[22px] border border-white/60 bg-white/82 p-5 shadow-panel backdrop-blur 2xl:right-10">
+                  <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">
+                    Page navigation
+                  </p>
+                  <nav aria-label="Section navigation" className="mt-4">
+                    <div className="relative pl-5">
+                      <span
+                        aria-hidden
+                        className="absolute bottom-2 left-[7px] top-2 w-px bg-synapse-border"
+                      />
+                      <div className="grid gap-1">
+                        {pageSections.map((section, index) => {
+                          const isActive = section.id === activeSectionId;
+
+                          return (
+                            <button
+                              key={section.id}
+                              type="button"
+                              aria-current={isActive ? "location" : undefined}
+                              onClick={() => scrollToSection(section.id)}
+                              className={cn(
+                                "synapse-focus relative -ml-5 flex w-full items-start gap-3 rounded-2xl py-2 pl-5 pr-2 text-left transition",
+                                isActive
+                                  ? "text-synapse-primary"
+                                  : "text-synapse-muted hover:text-synapse-text"
+                              )}
+                            >
+                              <span
+                                aria-hidden
+                                className={cn(
+                                  "absolute left-[7px] top-3 h-6 w-0.5 rounded-full transition",
+                                  isActive ? "bg-synapse-primary" : "bg-transparent"
+                                )}
+                              />
+                              <span className="min-w-8 shrink-0 text-body font-medium tabular-nums">
+                                {index + 1}.
+                              </span>
+                              <span className="line-clamp-2 text-body">{section.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </nav>
+                </div>
+              </aside>
+            ) : null}
+          </div>
         </main>
       </div>
     </div>
