@@ -9,6 +9,9 @@
 
 [Testing Analysis Documentation (QATD)](Testing%20Analysis%20Documentation%20(QATD)_SynapseCore%20System.pdf)
 
+## Pick Desk Slides
+[Pitch Deck](PICK%20DECK_SynapseCore%20System.pdf)
+
 # synapsecore-system
 
 SynapseCore System is a Next.js application for HQ and Branch Office coordination through AI-assisted workflows, requests, approvals, project phases, planning insight, and structured demo data.
