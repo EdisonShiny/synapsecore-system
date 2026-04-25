@@ -197,6 +197,7 @@ function createSeedProject(): ProjectRecord {
         sourceRunId: "seed-run-capacitor-recovery",
         completionInput: null,
         completionAttachments: [],
+        completionLinks: [],
         completionDatabasePaths: [],
         completionReport: null,
         validationSummary: null,
@@ -402,6 +403,7 @@ function normalizePhase(phase: Partial<ProjectPhaseRecord>, index: number): Proj
     sourceRunId: phase.sourceRunId ?? null,
     completionInput: phase.completionInput ?? null,
     completionAttachments: Array.isArray(phase.completionAttachments) ? phase.completionAttachments : [],
+    completionLinks: Array.isArray(phase.completionLinks) ? phase.completionLinks : [],
     completionDatabasePaths: Array.isArray(phase.completionDatabasePaths) ? phase.completionDatabasePaths : [],
     completionReport: phase.completionReport ?? null,
     validationSummary: phase.validationSummary ?? null,
@@ -475,6 +477,7 @@ function normalizeWorkflowRun(run: Partial<WorkflowRunRecord>, index: number): W
     executedByOfficeName: run.executedByOfficeName ?? "",
     unstructuredInput: run.unstructuredInput ?? "",
     attachments: Array.isArray(run.attachments) ? run.attachments : [],
+    links: Array.isArray(run.links) ? run.links : [],
     attachedDatabasePaths: Array.isArray(run.attachedDatabasePaths) ? run.attachedDatabasePaths : [],
     attachedDatabaseSummaries: Array.isArray(run.attachedDatabaseSummaries)
       ? run.attachedDatabaseSummaries
@@ -511,6 +514,7 @@ function normalizeRequest(request: Partial<RequestApplicationRecord>, index: num
     createdByOfficeName: request.createdByOfficeName ?? "",
     applicationText: request.applicationText ?? "",
     attachments: Array.isArray(request.attachments) ? request.attachments : [],
+    links: Array.isArray(request.links) ? request.links : [],
     selectedDatabasePaths: Array.isArray(request.selectedDatabasePaths) ? request.selectedDatabasePaths : [],
     selectedDatabaseSummaries: Array.isArray(request.selectedDatabaseSummaries)
       ? request.selectedDatabaseSummaries

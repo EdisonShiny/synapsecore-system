@@ -2,7 +2,7 @@
 
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AppShell, FileUploadBox, FormField, PrimaryButton, SecondaryButton, SelectField, TextAreaField } from "@/components";
+import { AppShell, FileUploadBox, FormField, PrimaryButton, SecondaryButton, SelectField, TextAreaField, WebLinkInputBox } from "@/components";
 import { apiRequest } from "@/src/client/api";
 import { useDemoSession } from "@/src/client/use-demo-session";
 import { buildDatabaseAttachmentTree } from "@/src/modules/system/database-options";
@@ -27,7 +27,7 @@ import {
   ValidationBadge,
   WorkflowRunStatusBadge
 } from "@/components/system/ui";
-import type { DatabasePayload, WorkflowDetailPayload, WorkflowRunRecord } from "@/types/system";
+import type { DatabasePayload, WebLinkCheckResult, WorkflowDetailPayload, WorkflowRunRecord } from "@/types/system";
 
 export function WorkflowDetailPage({ workflowId }: { workflowId: string }) {
   const router = useRouter();
@@ -35,6 +35,7 @@ export function WorkflowDetailPage({ workflowId }: { workflowId: string }) {
   const [detail, setDetail] = useState<WorkflowDetailPayload | null>(null);
   const [runInput, setRunInput] = useState("");
   const [runAttachments, setRunAttachments] = useState<File[]>([]);
+  const [runLinks, setRunLinks] = useState<WebLinkCheckResult[]>([]);
   const [selectedDatabasePaths, setSelectedDatabasePaths] = useState<string[]>([]);
   const [database, setDatabase] = useState<DatabasePayload | null>(null);
   const [selectedPresetId, setSelectedPresetId] = useState<WorkflowPresetId>(defaultWorkflowPromptPreset.id);
@@ -146,6 +147,11 @@ export function WorkflowDetailPage({ workflowId }: { workflowId: string }) {
       return;
     }
 
+    if (runLinks.some((link) => link.status !== "allowed")) {
+      setFeedback("Remove blocked or invalid links before running the workflow.");
+      return;
+    }
+
     setRunning(true);
     setFeedback("");
 
@@ -156,11 +162,13 @@ export function WorkflowDetailPage({ workflowId }: { workflowId: string }) {
         json: {
           unstructuredInput: runInput,
           attachments: await filesToAttachmentReferences(runAttachments),
+          links: runLinks,
           selectedDatabasePaths
         }
       });
       setRunInput("");
       setRunAttachments([]);
+      setRunLinks([]);
       await refreshDetail();
       setFeedback(
         data.run.status === "Completed"
@@ -475,6 +483,13 @@ export function WorkflowDetailPage({ workflowId }: { workflowId: string }) {
                     }
                   />
                 </div>
+                <WebLinkInputBox
+                  session={session}
+                  label="Attach web links"
+                  hint="Each link is checked against robots.txt before you can submit. Allowed pages will be scraped and added to the AI context."
+                  links={runLinks}
+                  onChange={setRunLinks}
+                />
                 <DatabaseContextSelector
                   nodes={databaseAttachmentTree}
                   selectedPaths={selectedDatabasePaths}
@@ -519,7 +534,7 @@ export function WorkflowDetailPage({ workflowId }: { workflowId: string }) {
                   <p className="mt-3 rounded-xl border border-synapse-border bg-white p-3 text-body text-synapse-text">
                     {run.unstructuredInput}
                   </p>
-                  {(run.attachments.length > 0 || run.attachedDatabasePaths.length > 0 || run.webSearchEnabled) ? (
+                  {(run.attachments.length > 0 || (run.links?.length ?? 0) > 0 || run.attachedDatabasePaths.length > 0) ? (
                     <div className="mt-4 rounded-xl border border-synapse-border bg-white p-4">
                       <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Attached context</p>
                       {run.attachments.length > 0 ? (
@@ -529,15 +544,19 @@ export function WorkflowDetailPage({ workflowId }: { workflowId: string }) {
                           ))}
                         </div>
                       ) : null}
+                      {(run.links?.length ?? 0) > 0 ? (
+                        <div className="mt-3 grid gap-2 text-body text-synapse-text">
+                          {run.links.map((link) => (
+                            <p key={link.id}>{link.title || link.normalizedUrl} ({link.normalizedUrl})</p>
+                          ))}
+                        </div>
+                      ) : null}
                       {run.attachedDatabasePaths.length > 0 ? (
                         <div className="mt-3 grid gap-2 text-body text-synapse-text">
                           {run.attachedDatabasePaths.map((path) => (
                             <p key={path}>{path}</p>
                           ))}
                         </div>
-                      ) : null}
-                      {run.webSearchEnabled ? (
-                        <p className="mt-3 text-body text-synapse-muted">Web search tool requested for this AI call.</p>
                       ) : null}
                     </div>
                   ) : null}

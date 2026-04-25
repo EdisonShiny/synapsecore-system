@@ -26,6 +26,7 @@ import {
   getSystemStore,
   saveSystemStore
 } from "@/src/services/system-store";
+import { scrapeCheckedWebLinks } from "@/src/services/web-scrape";
 import {
   PROMPT_7_APPROVAL_DECISION,
   PROMPT_8_ESCALATION
@@ -70,6 +71,8 @@ import type {
   UpdateWorkflowInput,
   UpdateSystemAiConfigInput,
   UpdateOfficeInput,
+  WebLinkCheckResult,
+  WebLinkReference,
   WorkflowAttempt,
   WorkflowDetailPayload,
   WorkflowExtraction,
@@ -152,11 +155,21 @@ function resolveDatabaseContextSummaries(selectedPaths: string[]) {
     .filter((entry): entry is string => Boolean(entry));
 }
 
+function normalizeLinkChecks(links: WebLinkCheckResult[]) {
+  return Array.from(
+    new Map(
+      (links ?? [])
+        .filter((link): link is WebLinkCheckResult => Boolean(link))
+        .map((link) => [sanitizeText(link.normalizedUrl || link.url), link] as const)
+    ).values()
+  );
+}
+
 function buildAugmentedInput(args: {
   unstructuredInput: string;
   attachments: AttachmentReference[];
+  links: WebLinkReference[];
   databaseSummaries: string[];
-  webSearchEnabled: boolean;
 }) {
   const sections = [sanitizeText(args.unstructuredInput)];
 
@@ -177,9 +190,10 @@ function buildAugmentedInput(args: {
     sections.push("Attached structured database context:", ...args.databaseSummaries);
   }
 
-  if (args.webSearchEnabled) {
+  if (args.links.length > 0) {
     sections.push(
-      "Web search tool is enabled for this AI call when supported by the configured provider."
+      "Attached web context:",
+      ...args.links.map((link) => `${link.title || link.normalizedUrl} (${link.normalizedUrl}): ${link.scrapedContent}`)
     );
   }
 
@@ -380,6 +394,7 @@ function createInitialProjectPhase(
     sourceRunId: runId,
     completionInput: null,
     completionAttachments: [],
+    completionLinks: [],
     completionDatabasePaths: [],
     completionReport: null,
     validationSummary: null,
@@ -627,6 +642,7 @@ export async function runWorkflow(office: OfficeAccount, workflowId: string, inp
 
   const normalizedInput = sanitizeText(input.unstructuredInput);
   const attachments = normalizeAttachments(input.attachments ?? []);
+  const links = await scrapeCheckedWebLinks(normalizeLinkChecks(input.links ?? []));
   const databasePaths = Array.from(
     new Set((input.selectedDatabasePaths ?? []).map((path) => sanitizeText(path)).filter(Boolean))
   );
@@ -634,8 +650,8 @@ export async function runWorkflow(office: OfficeAccount, workflowId: string, inp
   const combinedInput = buildAugmentedInput({
     unstructuredInput: normalizedInput,
     attachments,
-    databaseSummaries,
-    webSearchEnabled: store.systemConfig.enableWebSearch
+    links,
+    databaseSummaries
   });
 
   if (!normalizedInput) {
@@ -651,6 +667,7 @@ export async function runWorkflow(office: OfficeAccount, workflowId: string, inp
     executedByOfficeName: office.officeName,
     unstructuredInput: normalizedInput,
     attachments,
+    links,
     attachedDatabasePaths: databasePaths,
     attachedDatabaseSummaries: databaseSummaries,
     webSearchEnabled: store.systemConfig.enableWebSearch,
@@ -1176,6 +1193,7 @@ export async function createRequestApplication(
   }
 
   const attachments = normalizeAttachments(input.attachments ?? []);
+  const links = await scrapeCheckedWebLinks(normalizeLinkChecks(input.links ?? []));
   const selectedDatabasePaths = Array.from(
     new Set((input.selectedDatabasePaths ?? []).map((path) => sanitizeText(path)).filter(Boolean))
   );
@@ -1186,6 +1204,7 @@ export async function createRequestApplication(
     branchOfficeName: office.officeName,
     applicationText,
     attachments,
+    links,
     selectedDatabasePaths,
     webSearchEnabled: store.systemConfig.enableWebSearch
   });
@@ -1202,6 +1221,7 @@ export async function createRequestApplication(
     createdByOfficeName: office.officeName,
     applicationText,
     attachments,
+    links,
     selectedDatabasePaths,
     selectedDatabaseSummaries: ai.databaseSummaries,
     attempts: ai.attempts,
@@ -1282,6 +1302,7 @@ export async function reapplyRequestApplication(
   }
 
   const attachments = normalizeAttachments(input.attachments ?? []);
+  const links = await scrapeCheckedWebLinks(normalizeLinkChecks(input.links ?? []));
   const selectedDatabasePaths = Array.from(
     new Set((input.selectedDatabasePaths ?? []).map((path) => sanitizeText(path)).filter(Boolean))
   );
@@ -1292,6 +1313,7 @@ export async function reapplyRequestApplication(
     branchOfficeName: office.officeName,
     applicationText,
     attachments,
+    links,
     selectedDatabasePaths,
     webSearchEnabled: store.systemConfig.enableWebSearch
   });
@@ -1299,6 +1321,7 @@ export async function reapplyRequestApplication(
 
   request.applicationText = applicationText;
   request.attachments = attachments;
+  request.links = links;
   request.selectedDatabasePaths = selectedDatabasePaths;
   request.selectedDatabaseSummaries = ai.databaseSummaries;
   request.attempts = ai.attempts;
@@ -1410,6 +1433,7 @@ async function runRequestApprovalAi(args: {
   branchOfficeName: string;
   applicationText: string;
   attachments: AttachmentReference[];
+  links: WebLinkReference[];
   selectedDatabasePaths: string[];
   webSearchEnabled: boolean;
 }) {
@@ -1417,8 +1441,8 @@ async function runRequestApprovalAi(args: {
   const combinedInput = buildAugmentedInput({
     unstructuredInput: args.applicationText,
     attachments: args.attachments,
-    databaseSummaries,
-    webSearchEnabled: args.webSearchEnabled
+    links: args.links,
+    databaseSummaries
   });
   const attempts: WorkflowAttempt[] = [];
   let previousReport = "";
@@ -1641,6 +1665,7 @@ export async function progressProjectPhase(
 
   const normalizedInput = sanitizeText(input.unstructuredInput);
   const attachments = normalizeAttachments(input.attachments ?? []);
+  const links = await scrapeCheckedWebLinks(normalizeLinkChecks(input.links ?? []));
   const databasePaths = Array.from(
     new Set((input.selectedDatabasePaths ?? []).map((path) => sanitizeText(path)).filter(Boolean))
   );
@@ -1648,8 +1673,8 @@ export async function progressProjectPhase(
   const combinedInput = buildAugmentedInput({
     unstructuredInput: normalizedInput,
     attachments,
-    databaseSummaries,
-    webSearchEnabled: store.systemConfig.enableWebSearch
+    links,
+    databaseSummaries
   });
 
   if (!normalizedInput) {
@@ -1665,6 +1690,7 @@ export async function progressProjectPhase(
     executedByOfficeName: office.officeName,
     unstructuredInput: normalizedInput,
     attachments,
+    links,
     attachedDatabasePaths: databasePaths,
     attachedDatabaseSummaries: databaseSummaries,
     webSearchEnabled: store.systemConfig.enableWebSearch,
@@ -1737,6 +1763,7 @@ export async function progressProjectPhase(
       currentPhase.status = "Completed";
       currentPhase.completionInput = normalizedInput;
       currentPhase.completionAttachments = attachments;
+      currentPhase.completionLinks = links;
       currentPhase.completionDatabasePaths = databasePaths;
       currentPhase.completionReport = report;
       currentPhase.validationSummary = validation.summary;
@@ -1769,6 +1796,7 @@ export async function progressProjectPhase(
           sourceRunId: run.id,
           completionInput: null,
           completionAttachments: [],
+          completionLinks: [],
           completionDatabasePaths: [],
           completionReport: null,
           validationSummary: null,

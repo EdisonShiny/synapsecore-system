@@ -9,7 +9,8 @@ import {
   PrimaryButton,
   SecondaryButton,
   SelectField,
-  TextAreaField
+  TextAreaField,
+  WebLinkInputBox
 } from "@/components";
 import { DatabaseContextSelector } from "@/components/system/database-context-selector";
 import { formatDateTime } from "@/components/system/format";
@@ -40,7 +41,8 @@ import type {
   ProjectRecord,
   RequestApplicationRecord,
   RequestPromptConfig,
-  RequestsPayload
+  RequestsPayload,
+  WebLinkCheckResult
 } from "@/types/system";
 
 export function RequestsPage() {
@@ -53,9 +55,11 @@ export function RequestsPage() {
   const [projectTitle, setProjectTitle] = useState("");
   const [applicationText, setApplicationText] = useState("");
   const [applicationAttachments, setApplicationAttachments] = useState<File[]>([]);
+  const [applicationLinks, setApplicationLinks] = useState<WebLinkCheckResult[]>([]);
   const [applicationDatabasePaths, setApplicationDatabasePaths] = useState<string[]>([]);
   const [reapplyText, setReapplyText] = useState("");
   const [reapplyAttachments, setReapplyAttachments] = useState<File[]>([]);
+  const [reapplyLinks, setReapplyLinks] = useState<WebLinkCheckResult[]>([]);
   const [reapplyDatabasePaths, setReapplyDatabasePaths] = useState<string[]>([]);
   const [decision, setDecision] = useState<"Approved" | "Rejected">("Approved");
   const [decisionComments, setDecisionComments] = useState("");
@@ -156,6 +160,17 @@ export function RequestsPage() {
     if (selectedRequest?.status === "Rejected") {
       setReapplyText(selectedRequest.applicationText);
       setReapplyDatabasePaths(selectedRequest.selectedDatabasePaths);
+      setReapplyLinks(
+        (selectedRequest.links ?? []).map((link) => ({
+          id: link.id,
+          url: link.url,
+          normalizedUrl: link.normalizedUrl,
+          title: link.title,
+          status: "allowed",
+          detail: link.detail,
+          checkedAt: link.checkedAt
+        }))
+      );
     }
   }, [selectedRequest]);
 
@@ -193,6 +208,11 @@ export function RequestsPage() {
       return;
     }
 
+    if (applicationLinks.some((link) => link.status !== "allowed")) {
+      setFeedback("Remove blocked or invalid links before submitting the request.");
+      return;
+    }
+
     setSubmittingApplication(true);
     setFeedback("");
 
@@ -204,6 +224,7 @@ export function RequestsPage() {
           projectTitle,
           applicationText,
           attachments: await filesToAttachmentReferences(applicationAttachments),
+          links: applicationLinks,
           selectedDatabasePaths: applicationDatabasePaths
         }
       });
@@ -211,6 +232,7 @@ export function RequestsPage() {
       setProjectTitle("");
       setApplicationText("");
       setApplicationAttachments([]);
+      setApplicationLinks([]);
       setApplicationDatabasePaths([]);
       await reloadRequests({ selectedRequestId: data.request.id });
       setFeedback("Request application submitted and sent into the approval AI workflow.");
@@ -230,6 +252,11 @@ export function RequestsPage() {
       return;
     }
 
+    if (reapplyLinks.some((link) => link.status !== "allowed")) {
+      setFeedback("Remove blocked or invalid links before reapplying the request.");
+      return;
+    }
+
     setSubmittingReapply(true);
     setFeedback("");
 
@@ -242,12 +269,14 @@ export function RequestsPage() {
           json: {
             applicationText: reapplyText,
             attachments: await filesToAttachmentReferences(reapplyAttachments),
+            links: reapplyLinks,
             selectedDatabasePaths: reapplyDatabasePaths
           }
         }
       );
 
       setReapplyAttachments([]);
+      setReapplyLinks([]);
       await reloadRequests({ selectedRequestId: data.request.id });
       setFeedback("Rejected request has been reapplied and sent back for HQ review.");
     } catch (submitError) {
@@ -528,6 +557,13 @@ export function RequestsPage() {
                 }
               />
             </div>
+            <WebLinkInputBox
+              session={session}
+              label="Attach web links"
+              hint="Each link is checked immediately. Only pages that allow scraping can be submitted as part of the request."
+              links={applicationLinks}
+              onChange={setApplicationLinks}
+            />
             <DatabaseContextSelector
               nodes={databaseAttachmentTree}
               selectedPaths={applicationDatabasePaths}
@@ -635,7 +671,7 @@ export function RequestsPage() {
                 </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-2xl border border-synapse-border bg-white p-4">
                   <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Supporting files</p>
                   {selectedRequest.attachments.length > 0 ? (
@@ -648,6 +684,20 @@ export function RequestsPage() {
                     </div>
                   ) : (
                     <p className="mt-3 text-body text-synapse-muted">No support files were attached.</p>
+                  )}
+                </div>
+                <div className="rounded-2xl border border-synapse-border bg-white p-4">
+                  <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Attached links</p>
+                  {(selectedRequest.links?.length ?? 0) > 0 ? (
+                    <div className="mt-3 grid gap-2">
+                      {selectedRequest.links.map((link) => (
+                        <div key={link.id} className="rounded-2xl bg-synapse-elevated p-3 text-body text-synapse-text">
+                          {link.title || link.normalizedUrl} ({link.normalizedUrl})
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-body text-synapse-muted">No links were attached.</p>
                   )}
                 </div>
                 <div className="rounded-2xl border border-synapse-border bg-white p-4">
@@ -844,6 +894,13 @@ export function RequestsPage() {
                       }
                     />
                   </div>
+                  <WebLinkInputBox
+                    session={session}
+                    label="Attach revised web links"
+                    hint="Rechecked links that allow scraping will be included in the revised request context."
+                    links={reapplyLinks}
+                    onChange={setReapplyLinks}
+                  />
                   <DatabaseContextSelector
                     nodes={databaseAttachmentTree}
                     selectedPaths={reapplyDatabasePaths}

@@ -69,6 +69,28 @@ export type AttachmentReference = {
   contentStatus?: "inline-text" | "metadata-only" | "too-large" | "unsupported";
 };
 
+export type WebLinkValidationStatus = "allowed" | "blocked" | "error";
+
+export type WebLinkCheckResult = {
+  id: string;
+  url: string;
+  normalizedUrl: string;
+  title: string;
+  status: WebLinkValidationStatus;
+  detail: string;
+  checkedAt: string;
+};
+
+export type WebLinkReference = {
+  id: string;
+  url: string;
+  normalizedUrl: string;
+  title: string;
+  detail: string;
+  checkedAt: string;
+  scrapedContent: string;
+};
+
 export type AiWorkflowStep = {
   title: string;
   detail: string;
@@ -155,6 +177,7 @@ export type WorkflowRunRecord = {
   executedByOfficeName: string;
   unstructuredInput: string;
   attachments: AttachmentReference[];
+  links: WebLinkReference[];
   attachedDatabasePaths: string[];
   attachedDatabaseSummaries: string[];
   webSearchEnabled: boolean;
@@ -209,6 +232,7 @@ export type RequestApplicationRecord = {
   createdByOfficeName: string;
   applicationText: string;
   attachments: AttachmentReference[];
+  links: WebLinkReference[];
   selectedDatabasePaths: string[];
   selectedDatabaseSummaries: string[];
   attempts: WorkflowAttempt[];
@@ -236,6 +260,7 @@ export type ProjectPhaseRecord = {
   sourceRunId: string | null;
   completionInput: string | null;
   completionAttachments: AttachmentReference[];
+  completionLinks: WebLinkReference[];
   completionDatabasePaths: string[];
   completionReport: string | null;
   validationSummary: string | null;
@@ -604,12 +629,14 @@ export type UpdateWorkflowInput = CreateWorkflowInput;
 export type ExecuteWorkflowInput = {
   unstructuredInput: string;
   attachments: AttachmentReference[];
+  links: WebLinkCheckResult[];
   selectedDatabasePaths: string[];
 };
 
 export type ProgressProjectPhaseInput = {
   unstructuredInput: string;
   attachments: AttachmentReference[];
+  links: WebLinkCheckResult[];
   selectedDatabasePaths: string[];
 };
 
@@ -629,11 +656,13 @@ export type CreateRequestApplicationInput = {
   projectTitle?: string;
   applicationText: string;
   attachments: AttachmentReference[];
+  links: WebLinkCheckResult[];
   selectedDatabasePaths: string[];
 };
 
 export type ReapplyRequestApplicationInput = {
   applicationText: string;
   attachments: AttachmentReference[];
+  links: WebLinkCheckResult[];
   selectedDatabasePaths: string[];
 };

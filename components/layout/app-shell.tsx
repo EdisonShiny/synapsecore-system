@@ -11,6 +11,7 @@ import {
   FolderKanban,
   GitBranchPlus,
   Inbox,
+  List,
   Loader2,
   LogOut,
   PanelLeft,
@@ -485,7 +486,7 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
           <div
             className={cn(
               "grid items-start gap-6 xl:gap-8",
-              pageSections.length > 1 ? "xl:pr-[23rem] 2xl:pr-[24rem]" : null
+              pageSections.length > 1 ? "xl:pr-[4.5rem]" : null
             )}
           >
             <div ref={contentRef} className="grid gap-6">
@@ -493,51 +494,61 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
               {drawer}
             </div>
             {pageSections.length > 1 ? (
-              <aside className="hidden xl:block xl:w-[17rem]">
-                <div className="fixed right-6 top-28 z-20 w-[17rem] rounded-2xl border border-synapse-border bg-white p-5 shadow-panel 2xl:right-10">
-                  <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">
-                    Page navigation
-                  </p>
-                  <nav aria-label="Section navigation" className="mt-4">
-                    <div className="relative pl-5">
-                      <span
-                        aria-hidden
-                        className="absolute bottom-2 left-[7px] top-2 w-px bg-synapse-border"
-                      />
-                      <div className="grid gap-1">
-                        {pageSections.map((section, index) => {
-                          const isActive = section.id === activeSectionId;
-
-                          return (
-                            <button
-                              key={section.id}
-                              type="button"
-                              aria-current={isActive ? "location" : undefined}
-                              onClick={() => scrollToSection(section.id)}
-                              className={cn(
-                                "synapse-focus relative -ml-5 flex w-full items-start gap-3 rounded-xl py-2 pl-5 pr-2 text-left transition",
-                                isActive
-                                  ? "bg-blue-50 text-blue-700"
-                                  : "text-synapse-muted hover:bg-synapse-elevated hover:text-synapse-text"
-                              )}
-                            >
-                              <span
-                                aria-hidden
-                                className={cn(
-                                  "absolute left-[7px] top-3 h-6 w-0.5 rounded-full transition",
-                                  isActive ? "bg-synapse-primary" : "bg-transparent"
-                                )}
-                              />
-                              <span className="min-w-8 shrink-0 text-body font-medium tabular-nums">
-                                {index + 1}.
-                              </span>
-                              <span className="line-clamp-2 text-body">{section.label}</span>
-                            </button>
-                          );
-                        })}
+              <aside className="pointer-events-none fixed right-4 top-32 z-20 hidden xl:block 2xl:right-8">
+                <div className="group pointer-events-auto relative flex justify-end">
+                  <div className="absolute right-0 top-0 w-[3.5rem] overflow-hidden rounded-2xl border border-synapse-border bg-white shadow-panel transition-all duration-200 ease-out group-hover:w-[18rem]">
+                    <div className="flex min-h-[12rem] flex-col">
+                      <div className="flex h-14 items-center justify-center gap-2 border-b border-synapse-border px-3 text-synapse-muted transition group-hover:justify-start group-hover:px-4">
+                        <List className="h-4 w-4 shrink-0" />
+                        <span className="hidden text-meta font-medium uppercase tracking-[0.08em] text-synapse-muted group-hover:inline">
+                          Page navigation
+                        </span>
                       </div>
+                      <nav
+                        aria-label="Section navigation"
+                        className="max-h-[70vh] overflow-y-auto px-3 py-3 opacity-0 transition duration-150 group-hover:opacity-100"
+                      >
+                        <div className="relative pl-5">
+                          <span
+                            aria-hidden
+                            className="absolute bottom-2 left-[7px] top-2 w-px bg-synapse-border"
+                          />
+                          <div className="grid gap-1">
+                            {pageSections.map((section, index) => {
+                              const isActive = section.id === activeSectionId;
+
+                              return (
+                                <button
+                                  key={section.id}
+                                  type="button"
+                                  aria-current={isActive ? "location" : undefined}
+                                  onClick={() => scrollToSection(section.id)}
+                                  className={cn(
+                                    "synapse-focus relative -ml-5 flex w-full items-start gap-3 rounded-xl py-2 pl-5 pr-2 text-left transition",
+                                    isActive
+                                      ? "bg-blue-50 text-blue-700"
+                                      : "text-synapse-muted hover:bg-synapse-elevated hover:text-synapse-text"
+                                  )}
+                                >
+                                  <span
+                                    aria-hidden
+                                    className={cn(
+                                      "absolute left-[7px] top-3 h-6 w-0.5 rounded-full transition",
+                                      isActive ? "bg-synapse-primary" : "bg-transparent"
+                                    )}
+                                  />
+                                  <span className="min-w-8 shrink-0 text-body font-medium tabular-nums">
+                                    {index + 1}.
+                                  </span>
+                                  <span className="line-clamp-2 text-body">{section.label}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </nav>
                     </div>
-                  </nav>
+                  </div>
                 </div>
               </aside>
             ) : null}

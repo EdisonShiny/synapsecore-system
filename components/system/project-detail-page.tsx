@@ -2,7 +2,7 @@
 
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AppShell, FileUploadBox, PrimaryButton, SecondaryButton, TextAreaField } from "@/components";
+import { AppShell, FileUploadBox, PrimaryButton, SecondaryButton, TextAreaField, WebLinkInputBox } from "@/components";
 import { apiRequest } from "@/src/client/api";
 import { useDemoSession } from "@/src/client/use-demo-session";
 import { buildDatabaseAttachmentTree } from "@/src/modules/system/database-options";
@@ -10,7 +10,7 @@ import { DatabaseContextSelector } from "@/components/system/database-context-se
 import { filesToAttachmentReferences } from "@/components/system/file-utils";
 import { formatDateTime } from "@/components/system/format";
 import { AiTransparencyPanel, EmptyBlock, PageSection, WorkflowStatusBadge } from "@/components/system/ui";
-import type { DatabasePayload, GeneratePhaseReportResult, ProjectPhaseRecord, ProjectRecord } from "@/types/system";
+import type { DatabasePayload, GeneratePhaseReportResult, ProjectPhaseRecord, ProjectRecord, WebLinkCheckResult } from "@/types/system";
 import { buildPhaseReportPdf, buildPhaseReportPdfFileName } from "@/src/utils/pdf";
 
 function PhaseCard({
@@ -70,6 +70,16 @@ function PhaseCard({
               </div>
             </>
           ) : null}
+          {(phase.completionLinks?.length ?? 0) > 0 ? (
+            <>
+              <p className="mt-4 text-meta uppercase tracking-[0.08em] text-synapse-muted">Attached links</p>
+              <div className="mt-2 grid gap-2 text-body text-synapse-text">
+                {phase.completionLinks.map((link) => (
+                  <p key={link.id}>{link.title || link.normalizedUrl} ({link.normalizedUrl})</p>
+                ))}
+              </div>
+            </>
+          ) : null}
           {phase.completionDatabasePaths.length > 0 ? (
             <>
               <p className="mt-4 text-meta uppercase tracking-[0.08em] text-synapse-muted">Attached database context</p>
@@ -103,6 +113,7 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
   const [project, setProject] = useState<ProjectRecord | null>(null);
   const [outcomeInput, setOutcomeInput] = useState("");
   const [phaseAttachments, setPhaseAttachments] = useState<File[]>([]);
+  const [phaseLinks, setPhaseLinks] = useState<WebLinkCheckResult[]>([]);
   const [selectedDatabasePaths, setSelectedDatabasePaths] = useState<string[]>([]);
   const [database, setDatabase] = useState<DatabasePayload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -206,6 +217,11 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
       return;
     }
 
+    if (phaseLinks.some((link) => link.status !== "allowed")) {
+      setFeedback("Remove blocked or invalid links before progressing the phase.");
+      return;
+    }
+
     setSubmitting(true);
     setFeedback("");
 
@@ -216,12 +232,14 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
         json: {
           unstructuredInput: outcomeInput,
           attachments: await filesToAttachmentReferences(phaseAttachments),
+          links: phaseLinks,
           selectedDatabasePaths
         }
       });
       setProject(data.project);
       setOutcomeInput("");
       setPhaseAttachments([]);
+      setPhaseLinks([]);
       setFeedback(
         data.project.lifecycleState === "Completed"
           ? "Project phase validated and the project is now closed."
@@ -420,6 +438,13 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
                         }
                       />
                     </div>
+                    <WebLinkInputBox
+                      session={session}
+                      label="Attach web links"
+                      hint="Each link is checked immediately. Only pages that allow scraping can be submitted and added to the phase context."
+                      links={phaseLinks}
+                      onChange={setPhaseLinks}
+                    />
                     <DatabaseContextSelector
                       nodes={databaseAttachmentTree}
                       selectedPaths={selectedDatabasePaths}
