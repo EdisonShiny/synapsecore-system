@@ -19,7 +19,8 @@ const emptyWorkflowForm: CreateWorkflowInput = {
     validatorPrompt: "",
     projectBuilderPrompt: "",
     phaseProgressPrompt: "",
-    phaseBuilderPrompt: ""
+    phaseBuilderPrompt: "",
+    phaseReportPrompt: ""
   }
 };
 
@@ -109,7 +110,7 @@ export function WorkflowsPage() {
       title="Workflows"
       description="Create reusable AI workflows with preset prompts, then run unstructured input through the staged extraction and validation loop."
     >
-      <PageSection title="Workflow overview" description="Every workflow stores four preset prompts and can generate projects after validation passes.">
+      <PageSection title="Workflow overview" description="Every workflow stores reusable prompts and can generate projects after validation passes.">
         <StatGrid
           items={[
             {
@@ -137,7 +138,7 @@ export function WorkflowsPage() {
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <PageSection
           title="Create workflow"
-          description="These six prompt fields define the full AI pipeline for intake, validation, project creation, and later phase progression."
+          description="These prompt fields define the AI pipeline for intake, validation, project creation, phase progression, and phase reporting."
           action={
             <PrimaryButton type="button" onClick={() => setForm(sampleWorkflowTemplate)}>
               Load sample workflow
@@ -229,6 +230,18 @@ export function WorkflowsPage() {
                 }))
               }
               hint="Instruction for the phase builder AI."
+            />
+            <TextAreaField
+              label="Preset prompt 9"
+              required
+              value={form.config.phaseReportPrompt}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  config: { ...current.config, phaseReportPrompt: event.target.value }
+                }))
+              }
+              hint="Instruction for the phase report AI."
             />
             <PrimaryButton loading={submitting} type="submit">
               Create workflow

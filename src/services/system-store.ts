@@ -1,6 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { sampleWorkflowTemplate } from "@/src/modules/system/sample-workflow";
 import type {
+  AiRecordsDatabase,
   CompanyDatabase,
   CustomDatabaseNode,
   IssueThread,
@@ -33,6 +35,66 @@ export type SystemDatabase = {
 
 const systemDatabasePath = path.join(process.cwd(), "data", "system-database.json");
 const defaultOfficeTimestamp = "2026-01-01T00:00:00.000Z";
+
+const defaultDatabaseNodeDescriptions: Record<string, string> = {
+  root: "Shared structured data layers available to the whole company network.",
+  company:
+    "Core company information and structured operational records for the capacitor manufacturing business.",
+  aiRecords:
+    "AI-generated structured project memory, including phase plans and validated outcomes.",
+  "aiRecords.projects":
+    "Projects tracked by the AI pipeline, with one branch per project and one branch per phase.",
+  "company.generalInfo":
+    "Company identity, working field, and high-level operational overview.",
+  "company.inventoryRecords":
+    "Inventory tracking layers for monthly and yearly stock visibility.",
+  "company.inventoryRecords.monthly":
+    "Monthly inventory snapshots and notes for recent operational periods.",
+  "company.inventoryRecords.yearly":
+    "Yearly inventory summaries for long-range planning and comparison.",
+  "company.salesReports":
+    "Sales performance layers split by monthly and yearly reporting windows.",
+  "company.salesReports.monthly":
+    "Monthly sales performance, including sales and profit values by period.",
+  "company.salesReports.monthly.sales":
+    "Monthly sales values used to track commercial performance.",
+  "company.salesReports.monthly.profit":
+    "Monthly profit values paired with the monthly sales records.",
+  "company.salesReports.yearly":
+    "Yearly sales performance, including sales and profit values by year.",
+  "company.salesReports.yearly.sales":
+    "Yearly sales values used to compare annual revenue performance.",
+  "company.salesReports.yearly.profit":
+    "Yearly profit values paired with the yearly sales records.",
+  "company.procurementRecords":
+    "Procurement tracking layers for monthly and yearly purchasing activity.",
+  "company.procurementRecords.monthly":
+    "Monthly procurement records with supply and purchasing notes.",
+  "company.procurementRecords.yearly":
+    "Yearly procurement summaries for longer-range supply review."
+};
+
+const defaultDatabaseNodeLabels: Record<string, string> = {
+  company: "Company",
+  aiRecords: "AI records",
+  "aiRecords.projects": "Projects",
+  "company.generalInfo": "General company info",
+  "company.inventoryRecords": "Inventory records",
+  "company.inventoryRecords.monthly": "Monthly",
+  "company.inventoryRecords.yearly": "Yearly",
+  "company.salesReports": "Sales report",
+  "company.salesReports.monthly": "Monthly",
+  "company.salesReports.yearly": "Yearly",
+  "company.procurementRecords": "Procurement records",
+  "company.procurementRecords.monthly": "Monthly",
+  "company.procurementRecords.yearly": "Yearly"
+};
+
+const defaultDatabaseFieldLabels: Record<string, string> = {
+  "company.generalInfo.companyName": "Company name",
+  "company.generalInfo.workingField": "Working field",
+  "company.generalInfo.overview": "Overview"
+};
 
 function createDefaultOffices(): OfficeAccount[] {
   return [
@@ -80,12 +142,188 @@ function ensureDefaultDemoOffices(offices: OfficeAccount[]) {
   ];
 }
 
+function createSeedWorkflow(): WorkflowRecord {
+  return {
+    id: "seed-workflow-capacitor-recovery",
+    name: sampleWorkflowTemplate.name,
+    description: sampleWorkflowTemplate.description,
+    createdByOfficeId: "demo-hq-office",
+    createdByOfficeName: "SynapseCore HQ",
+    createdAt: defaultOfficeTimestamp,
+    updatedAt: defaultOfficeTimestamp,
+    lastRunAt: defaultOfficeTimestamp,
+    runCount: 1,
+    projectCount: 1,
+    config: sampleWorkflowTemplate.config
+  };
+}
+
+function createSeedProject(): ProjectRecord {
+  return {
+    id: "seed-project-capacitor-output-stabilization",
+    subject: "Project: Capacitor Output Stabilization",
+    applicantName: "Branch Demo Manager",
+    position: "Branch Operations Lead",
+    email: "branch@synapsecore.test",
+    description:
+      "Stabilize capacitor output by resolving raw-material delays, tightening replenishment monitoring, and protecting production throughput.",
+    branchOfficeId: "demo-branch-office",
+    branchOfficeName: "SynapseCore Branch",
+    createdByOfficeId: "demo-branch-office",
+    workflowId: "seed-workflow-capacitor-recovery",
+    workflowName: sampleWorkflowTemplate.name,
+    workflowRunId: "seed-run-capacitor-recovery",
+    createdAt: "2026-01-03T09:00:00.000Z",
+    updatedAt: "2026-01-03T09:00:00.000Z",
+    appealCount: 0,
+    attachments: [],
+    status: "Approved",
+    lifecycleState: "Active",
+    phases: [
+      {
+        id: "seed-phase-1",
+        phaseNumber: 1,
+        title: "Phase 1: Production gap containment",
+        objective:
+          "Stabilize current capacitor line output by identifying the highest-impact shortages and daily bottlenecks.",
+        actionablePlans: [
+          "Confirm the daily raw-material shortage list for affected capacitor lines.",
+          "Assign one branch owner to track output loss and delayed replenishment every shift.",
+          "Escalate unstable supplier lead times and compare them against current inventory burn."
+        ],
+        expectedOutcome:
+          "Output loss and stock pressure are visible daily, and the branch has one accountable operating baseline.",
+        status: "Current",
+        sourceRunId: "seed-run-capacitor-recovery",
+        completionInput: null,
+        completionAttachments: [],
+        completionDatabasePaths: [],
+        completionReport: null,
+        validationSummary: null,
+        completedAt: null,
+        createdAt: "2026-01-03T09:00:00.000Z"
+      }
+    ],
+    report: {
+      id: "seed-report-capacitor-output-stabilization",
+      branchOfficeName: "SynapseCore Branch",
+      submissionTime: "2026-01-03T09:00:00.000Z",
+      projectDescription:
+        "The branch identified recurring raw-material delays and unstable replenishment thresholds affecting capacitor output.",
+      applicantInformation: {
+        applicantName: "Branch Demo Manager",
+        position: "Branch Operations Lead",
+        email: "branch@synapsecore.test"
+      },
+      resourceLinks: [],
+      aiAdvice:
+        "Use one accountable branch owner, stabilize replenishment thresholds, and monitor daily output evidence before expanding scope.",
+      aiOutput: {
+        id: "seed-ai-insight-capacitor-output-stabilization",
+        generatedAt: "2026-01-03T09:00:00.000Z",
+        directResult:
+          "The branch has a grounded production-recovery project ready for monitored execution.",
+        finalConclusion:
+          "The project should proceed because the branch has clear supply pressure, measurable production impact, and an actionable first phase.",
+        advice:
+          "Monitor output loss, supplier response, and replenishment thresholds together so the next phase can be built from verified evidence.",
+        workflow: [
+          {
+            title: "Branch signal intake",
+            detail:
+              "The workflow combined branch demand signals, inventory pressure, and supplier delay context into one validated project candidate."
+          },
+          {
+            title: "Validation",
+            detail:
+              "The extractor and validator confirmed that the production risk was grounded in the submitted branch evidence."
+          },
+          {
+            title: "Project build",
+            detail:
+              "The builder created a phased execution plan focused on throughput stabilization and evidence-driven next steps."
+          }
+        ],
+        evidence: [
+          {
+            label: "Production signal",
+            detail: "Capacitor output was pressured by raw-material delay and unstable replenishment timing.",
+            source: "Operational"
+          },
+          {
+            label: "Branch context",
+            detail: "SynapseCore Branch is the execution owner for the first stabilization phase.",
+            source: "Operational"
+          }
+        ]
+      }
+    },
+    decision: {
+      decision: "Approved",
+      comments: "Seed project approved for demo-ready execution.",
+      decidedAt: "2026-01-03T09:00:00.000Z",
+      decidedByOfficeId: "demo-hq-office",
+      decidedByOfficeName: "SynapseCore HQ"
+    },
+    statusHistory: [
+      {
+        status: "Submitted",
+        changedAt: "2026-01-03T09:00:00.000Z",
+        changedByOfficeId: "demo-branch-office",
+        changedByOfficeName: "SynapseCore Branch",
+        note: "Seed project created from the sample capacitor workflow."
+      },
+      {
+        status: "Approved",
+        changedAt: "2026-01-03T09:00:00.000Z",
+        changedByOfficeId: "demo-hq-office",
+        changedByOfficeName: "SynapseCore HQ",
+        note: "Seed project approved to provide a shared starting point in fresh checkouts."
+      }
+    ]
+  };
+}
+
+function createAiRecordsFromProjects(projects: ProjectRecord[]): AiRecordsDatabase {
+  return {
+    projects: projects.map((project) => ({
+      projectId: project.id,
+      projectSubject: project.subject,
+      phases: project.phases
+        .slice()
+        .sort((left, right) => left.phaseNumber - right.phaseNumber)
+        .map((phase) => ({
+          phaseId: phase.id,
+          phaseNumber: phase.phaseNumber,
+          title: phase.title,
+          plan: [
+            `Objective: ${phase.objective}`,
+            phase.actionablePlans.length > 0
+              ? `Actionable plans:\n- ${phase.actionablePlans.join("\n- ")}`
+              : "Actionable plans: No plans recorded.",
+            `Expected outcome: ${phase.expectedOutcome || "No expected outcome recorded."}`
+          ].join("\n\n"),
+          outcome: phase.validationSummary
+            ? [
+                phase.completionReport || "No validated phase report recorded.",
+                `Validation: ${phase.validationSummary}`
+              ].join("\n\n")
+            : phase.completionReport || "",
+          updatedAt: phase.completedAt ?? phase.createdAt
+        })),
+      updatedAt: project.updatedAt
+    }))
+  };
+}
+
 function createEmptyStore(): SystemDatabase {
+  const seedProject = createSeedProject();
+
   return {
     offices: createDefaultOffices(),
-    workflows: [],
+    workflows: [createSeedWorkflow()],
     workflowRuns: [],
-    projects: [],
+    projects: [seedProject],
     requests: [],
     issues: [],
     planSubmissions: [],
@@ -130,17 +368,23 @@ function createEmptyStore(): SystemDatabase {
           { period: "2025", value: 19750000, note: "Higher specialty material spend for automotive and industrial lines." }
         ]
       },
+      aiRecords: createAiRecordsFromProjects([seedProject]),
+      nodeLabels: { ...defaultDatabaseNodeLabels },
+      fieldLabels: { ...defaultDatabaseFieldLabels },
+      nodeDescriptions: { ...defaultDatabaseNodeDescriptions },
+      deletedPaths: [],
       customTree: []
     },
-    requestConfig: {
+      requestConfig: {
       requestAnalysisPrompt:
         "You are the request-intake analyst for a capacitor manufacturing company. Read the request application, unstructured support inputs, attached files, and selected structured company data. Write a factual report focused on the requested approval scope, operational need, evidence quality, impact, urgency, and delivery constraints.",
       requestRecommendationPrompt:
         "You are the approval recommendation model for a capacitor manufacturing company. Use the validated extracted information to recommend approve or reject. Give a clear reason, call out the main business and operational considerations, and avoid unsupported assumptions."
-    },
-    systemConfig: {
+      },
+      systemConfig: {
       apiUrl: "",
       apiKey: "",
+      model: "ilmu-glm-5.1",
       enableWebSearch: true
     }
   };
@@ -215,7 +459,8 @@ function normalizeWorkflow(workflow: Partial<WorkflowRecord>, index: number): Wo
       validatorPrompt: workflow.config?.validatorPrompt ?? "",
       projectBuilderPrompt: workflow.config?.projectBuilderPrompt ?? "",
       phaseProgressPrompt: workflow.config?.phaseProgressPrompt ?? "",
-      phaseBuilderPrompt: workflow.config?.phaseBuilderPrompt ?? ""
+      phaseBuilderPrompt: workflow.config?.phaseBuilderPrompt ?? "",
+      phaseReportPrompt: workflow.config?.phaseReportPrompt ?? ""
     }
   };
 }
@@ -291,11 +536,11 @@ function normalizeCustomDatabaseNode(
 ): CustomDatabaseNode {
   return {
     id: node.id ?? `custom-node-${index + 1}`,
+    kind: node.kind === "field" ? "field" : "branch",
     label: node.label ?? "Untitled field",
+    description: node.description ?? "",
     value: node.value ?? "",
-    children: Array.isArray(node.children)
-      ? node.children.map((child, childIndex) => normalizeCustomDatabaseNode(child, childIndex))
-      : [],
+    parentPath: node.parentPath ?? "company",
     createdAt: node.createdAt ?? "",
     updatedAt: node.updatedAt ?? node.createdAt ?? ""
   };
@@ -349,6 +594,30 @@ function normalizeStore(store: Partial<SystemDatabase> | null | undefined): Syst
           ? store.companyDatabase.procurementRecords.yearly
           : []
       },
+      aiRecords: {
+        projects: Array.isArray(store?.companyDatabase?.aiRecords?.projects)
+          ? store.companyDatabase.aiRecords.projects
+          : createAiRecordsFromProjects(
+              Array.isArray(store?.projects)
+                ? store.projects.map((project, index) => normalizeProject(project, index))
+                : []
+            ).projects
+      },
+      nodeLabels: {
+        ...defaultDatabaseNodeLabels,
+        ...(store?.companyDatabase?.nodeLabels ?? {})
+      },
+      fieldLabels: {
+        ...defaultDatabaseFieldLabels,
+        ...(store?.companyDatabase?.fieldLabels ?? {})
+      },
+      nodeDescriptions: {
+        ...defaultDatabaseNodeDescriptions,
+        ...(store?.companyDatabase?.nodeDescriptions ?? {})
+      },
+      deletedPaths: Array.isArray(store?.companyDatabase?.deletedPaths)
+        ? store.companyDatabase.deletedPaths.filter((path): path is string => typeof path === "string")
+        : [],
       customTree: Array.isArray(store?.companyDatabase?.customTree)
         ? store.companyDatabase.customTree.map((node, index) => normalizeCustomDatabaseNode(node, index))
         : []
@@ -364,6 +633,7 @@ function normalizeStore(store: Partial<SystemDatabase> | null | undefined): Syst
     systemConfig: {
       apiUrl: store?.systemConfig?.apiUrl ?? "",
       apiKey: store?.systemConfig?.apiKey ?? "",
+      model: store?.systemConfig?.model ?? "ilmu-glm-5.1",
       enableWebSearch: store?.systemConfig?.enableWebSearch ?? true
     }
   };

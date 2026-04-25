@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { AppShell, FileUploadBox, FormField, PrimaryButton, SecondaryButton, TextAreaField } from "@/components";
 import { apiRequest } from "@/src/client/api";
 import { useDemoSession } from "@/src/client/use-demo-session";
-import { databaseAttachmentOptions } from "@/src/modules/system/database-options";
+import { buildDatabaseAttachmentTree } from "@/src/modules/system/database-options";
 import { sampleWorkflowTemplate } from "@/src/modules/system/sample-workflow";
 import { filesToAttachmentReferences } from "@/components/system/file-utils";
+import { DatabaseContextSelector } from "@/components/system/database-context-selector";
 import { formatDateTime } from "@/components/system/format";
 import {
   EmptyBlock,
@@ -24,7 +25,7 @@ export function WorkflowDetailPage({ workflowId }: { workflowId: string }) {
   const { session, loading: sessionLoading, signOut } = useDemoSession();
   const [detail, setDetail] = useState<WorkflowDetailPayload | null>(null);
   const [runInput, setRunInput] = useState("");
-  const [runAttachments, setRunAttachments] = useState<FileList | null>(null);
+  const [runAttachments, setRunAttachments] = useState<File[]>([]);
   const [selectedDatabasePaths, setSelectedDatabasePaths] = useState<string[]>([]);
   const [database, setDatabase] = useState<DatabasePayload | null>(null);
   const [feedback, setFeedback] = useState("");
@@ -74,6 +75,10 @@ export function WorkflowDetailPage({ workflowId }: { workflowId: string }) {
   const latestRun = useMemo(
     () => detail?.runs[0] ?? null,
     [detail]
+  );
+  const databaseAttachmentTree = useMemo(
+    () => (database ? buildDatabaseAttachmentTree(database.company) : []),
+    [database]
   );
 
   if (!session || sessionLoading) {
@@ -141,7 +146,7 @@ export function WorkflowDetailPage({ workflowId }: { workflowId: string }) {
         }
       });
       setRunInput("");
-      setRunAttachments(null);
+      setRunAttachments([]);
       await refreshDetail();
       setFeedback(
         data.run.status === "Completed"
@@ -216,7 +221,7 @@ export function WorkflowDetailPage({ workflowId }: { workflowId: string }) {
           <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
             <PageSection
               title="Workflow configuration"
-              description="Edit the six preset prompts that define intake, validation, project building, and phase progression."
+              description="Edit the preset prompts that define intake, validation, project building, phase progression, and phase reporting."
               action={
                 <SecondaryButton
                   type="button"
@@ -379,6 +384,24 @@ export function WorkflowDetailPage({ workflowId }: { workflowId: string }) {
                     )
                   }
                 />
+                <TextAreaField
+                  label="Preset prompt 9"
+                  required
+                  value={detail.workflow.config.phaseReportPrompt}
+                  onChange={(event) =>
+                    setDetail((current) =>
+                      current
+                        ? {
+                            ...current,
+                            workflow: {
+                              ...current.workflow,
+                              config: { ...current.workflow.config, phaseReportPrompt: event.target.value }
+                            }
+                          }
+                        : current
+                    )
+                  }
+                />
                 <PrimaryButton loading={savingConfig} type="submit">
                   Save workflow configuration
                 </PrimaryButton>
@@ -398,44 +421,19 @@ export function WorkflowDetailPage({ workflowId }: { workflowId: string }) {
                   <FileUploadBox
                     label="Attach supporting files"
                     hint="Text, CSV, JSON, and markdown files will be read inline. Other supported files are attached as metadata."
-                  />
-                  <input
-                    className="text-body text-synapse-muted"
-                    type="file"
-                    multiple
+                    files={runAttachments}
                     accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,.txt,.rtf,.md,.json,.log,.xml"
-                    onChange={(event) => setRunAttachments(event.target.files)}
+                    onFilesChange={(files) => setRunAttachments((current) => [...current, ...files])}
+                    onRemoveFile={(index) =>
+                      setRunAttachments((current) => current.filter((_, currentIndex) => currentIndex !== index))
+                    }
                   />
                 </div>
-                <div className="grid gap-3 rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
-                  <p className="text-card-title text-synapse-text">Attach structured database context</p>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {databaseAttachmentOptions.map((option) => (
-                      <label key={option.path} className="flex items-start gap-3 text-body text-synapse-text">
-                        <input
-                          type="checkbox"
-                          checked={selectedDatabasePaths.includes(option.path)}
-                          onChange={(event) =>
-                            setSelectedDatabasePaths((current) =>
-                              event.target.checked
-                                ? [...current, option.path]
-                                : current.filter((path) => path !== option.path)
-                            )
-                          }
-                        />
-                        <span>
-                          <span className="block font-medium">{option.label}</span>
-                          <span className="text-synapse-muted">{option.description}</span>
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                  {database ? (
-                    <p className="text-meta text-synapse-muted">
-                      Company context available: {database.company.generalInfo.companyName}
-                    </p>
-                  ) : null}
-                </div>
+                <DatabaseContextSelector
+                  nodes={databaseAttachmentTree}
+                  selectedPaths={selectedDatabasePaths}
+                  onChange={setSelectedDatabasePaths}
+                />
                 <PrimaryButton loading={running} type="submit">
                   Run workflow
                 </PrimaryButton>

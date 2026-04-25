@@ -1,7 +1,13 @@
 "use client";
 
-import { Search, UploadCloud } from "lucide-react";
-import { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import { Paperclip, Search, UploadCloud, X } from "lucide-react";
+import {
+  type ChangeEvent,
+  InputHTMLAttributes,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+  useId
+} from "react";
 import { cn } from "@/lib/utils";
 
 const fieldBase =
@@ -91,16 +97,85 @@ export function TextAreaField({
   );
 }
 
-export function FileUploadBox({ label = "Upload files", hint }: { label?: string; hint?: string }) {
+export function FileUploadBox({
+  label = "Upload files",
+  hint,
+  files,
+  accept,
+  multiple = true,
+  onFilesChange,
+  onRemoveFile
+}: {
+  label?: string;
+  hint?: string;
+  files?: File[];
+  accept?: string;
+  multiple?: boolean;
+  onFilesChange?: (files: File[]) => void;
+  onRemoveFile?: (index: number) => void;
+}) {
+  const inputId = useId();
+
+  function handleChange(event: ChangeEvent<HTMLInputElement>) {
+    onFilesChange?.(Array.from(event.target.files ?? []));
+    event.target.value = "";
+  }
+
   return (
-    <label className="synapse-focus flex min-h-36 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-synapse-border bg-white px-6 py-8 text-center transition hover:border-synapse-primary hover:bg-synapse-elevated">
-      <UploadCloud className="h-8 w-8 text-synapse-secondary" />
-      <span className="text-card-title text-synapse-text">{label}</span>
-      <span className="max-w-sm text-body text-synapse-muted">
-        {hint ?? "Drag and drop documents for project, validation, approval, or execution_update."}
-      </span>
-      <input className="sr-only" type="file" multiple />
-    </label>
+    <div className="grid gap-3">
+      <label
+        htmlFor={inputId}
+        className="synapse-focus flex min-h-36 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-synapse-border bg-white px-6 py-8 text-center transition hover:border-synapse-primary hover:bg-synapse-elevated"
+      >
+        <UploadCloud className="h-8 w-8 text-synapse-secondary" />
+        <span className="text-card-title text-synapse-text">{label}</span>
+        <span className="max-w-sm text-body text-synapse-muted">
+          {hint ?? "Drag and drop documents for project, validation, approval, or execution update."}
+        </span>
+        <span className="rounded-full border border-synapse-border bg-synapse-elevated px-3 py-1 text-meta text-synapse-muted">
+          Choose files
+        </span>
+        <input
+          id={inputId}
+          className="sr-only"
+          type="file"
+          multiple={multiple}
+          accept={accept}
+          onChange={handleChange}
+        />
+      </label>
+      {files && files.length > 0 ? (
+        <div className="grid gap-2 rounded-2xl border border-synapse-border bg-synapse-elevated p-3">
+          <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Attached files</p>
+          {files.map((file, index) => (
+            <div
+              key={`${file.name}-${file.size}-${index}`}
+              className="flex items-start justify-between gap-3 rounded-xl border border-synapse-border bg-white px-3 py-2"
+            >
+              <div className="flex items-start gap-2">
+                <Paperclip className="mt-0.5 h-4 w-4 text-synapse-muted" />
+                <div className="grid gap-1">
+                  <p className="text-body font-medium text-synapse-text">{file.name}</p>
+                  <p className="text-meta text-synapse-muted">
+                    {(file.size / 1024).toFixed(file.size >= 1024 * 1024 ? 0 : 1)} KB
+                  </p>
+                </div>
+              </div>
+              {onRemoveFile ? (
+                <button
+                  type="button"
+                  className="synapse-focus rounded-full border border-synapse-border p-1 text-synapse-muted transition hover:border-synapse-primary hover:text-synapse-primary"
+                  onClick={() => onRemoveFile(index)}
+                  aria-label={`Remove ${file.name}`}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 

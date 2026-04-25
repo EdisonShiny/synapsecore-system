@@ -30,6 +30,7 @@ export function SettingsPage() {
   const [aiConfig, setAiConfig] = useState<SystemSettingsPayload["aiConfig"]>({
     apiUrl: "",
     apiKey: "",
+    model: "nemo-super",
     enableWebSearch: true
   });
   const [databaseInfo, setDatabaseInfo] = useState<SystemSettingsPayload["database"] | null>(null);
@@ -242,6 +243,15 @@ export function SettingsPage() {
                 }
                 placeholder="Enter the server-side API key"
                 hint="The live client uses this saved key when calling ILMU."
+              />
+              <FormField
+                label="AI model"
+                value={aiConfig.model}
+                onChange={(event) =>
+                  setAiConfig((current) => ({ ...current, model: event.target.value }))
+                }
+                placeholder="nemo-super"
+                hint="Use the exact ILMU model name your account is allowed to access."
               />
               <label className="flex items-center gap-3 text-body text-synapse-text">
                 <input

@@ -16,8 +16,8 @@ function readFileAsText(file: File) {
   });
 }
 
-export async function filesToAttachmentReferences(fileList: FileList | null) {
-  const files = Array.from(fileList ?? []);
+export async function filesToAttachmentReferences(filesInput: FileList | File[] | null) {
+  const files = Array.from(filesInput ?? []);
   const attachments: AttachmentReference[] = [];
 
   for (const file of files) {

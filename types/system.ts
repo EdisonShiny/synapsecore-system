@@ -25,9 +25,12 @@ export type Severity = "Low" | "Medium" | "High" | "Critical";
 
 export type EvidenceSource = "External" | "Internal" | "Operational";
 
+export type DatabaseNodeKind = "branch" | "field";
+
 export type SystemAiConfig = {
   apiUrl: string;
   apiKey: string;
+  model: string;
   enableWebSearch: boolean;
 };
 
@@ -94,6 +97,7 @@ export type WorkflowPromptConfig = {
   projectBuilderPrompt: string;
   phaseProgressPrompt: string;
   phaseBuilderPrompt: string;
+  phaseReportPrompt: string;
 };
 
 export type WorkflowRecord = {
@@ -406,11 +410,33 @@ export type SalesDatabaseRecord = {
 
 export type CustomDatabaseNode = {
   id: string;
+  kind: DatabaseNodeKind;
   label: string;
+  description: string;
   value: string;
-  children: CustomDatabaseNode[];
+  parentPath: string;
   createdAt: string;
   updatedAt: string;
+};
+
+export type AiRecordPhase = {
+  phaseId: string;
+  phaseNumber: number;
+  title: string;
+  plan: string;
+  outcome: string;
+  updatedAt: string;
+};
+
+export type AiRecordProject = {
+  projectId: string;
+  projectSubject: string;
+  phases: AiRecordPhase[];
+  updatedAt: string;
+};
+
+export type AiRecordsDatabase = {
+  projects: AiRecordProject[];
 };
 
 export type CompanyGeneralInfo = {
@@ -433,6 +459,11 @@ export type CompanyDatabase = {
     monthly: NumericDatabaseRecord[];
     yearly: NumericDatabaseRecord[];
   };
+  aiRecords: AiRecordsDatabase;
+  nodeLabels: Record<string, string>;
+  fieldLabels: Record<string, string>;
+  nodeDescriptions: Record<string, string>;
+  deletedPaths: string[];
   customTree: CustomDatabaseNode[];
 };
 
@@ -463,16 +494,44 @@ export type DatabaseAttachmentOption = {
   description: string;
 };
 
-export type CreateCustomDatabaseNodeInput = {
-  parentId?: string | null;
+export type DatabaseAttachmentTreeNode = {
+  path: string;
   label: string;
+  description: string;
+  children: DatabaseAttachmentTreeNode[];
+};
+
+export type CreateCustomDatabaseNodeInput = {
+  parentPath?: string | null;
+  kind: DatabaseNodeKind;
+  label: string;
+  description?: string;
   value?: string;
 };
 
 export type UpdateCustomDatabaseNodeInput = {
   id: string;
+  kind: DatabaseNodeKind;
   label: string;
+  description: string;
   value: string;
+};
+
+export type UpdateDatabaseNodeDescriptionInput = {
+  path: string;
+  description: string;
+  label?: string;
+};
+
+export type UpdateDatabaseFieldValueInput = {
+  path: string;
+  value: string;
+  label?: string;
+};
+
+export type DeleteCustomDatabaseNodeInput = {
+  id?: string;
+  path?: string;
 };
 
 export type CreateOfficeInput = {
@@ -551,6 +610,17 @@ export type ProgressProjectPhaseInput = {
   unstructuredInput: string;
   attachments: AttachmentReference[];
   selectedDatabasePaths: string[];
+};
+
+export type GeneratePhaseReportResult = {
+  projectId: string;
+  phaseId: string;
+  phaseTitle: string;
+  report: string;
+  extraction: WorkflowExtraction | null;
+  validation: WorkflowValidationFeedback | null;
+  attempts: WorkflowAttempt[];
+  generatedAt: string;
 };
 
 export type CreateRequestApplicationInput = {

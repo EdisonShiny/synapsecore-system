@@ -3,6 +3,7 @@ import { createId } from "@/src/utils/id";
 import { getSystemStore } from "@/src/services/system-store";
 import type {
   AiEvidence,
+  AiRecordPhase,
   AiInsight,
   AttachmentReference,
   CreateIssueInput,
@@ -11,6 +12,7 @@ import type {
   OfficeAccount,
   PlanInsight,
   ProjectPhaseRecord,
+  ProjectRecord,
   ProjectReport,
   SystemAiHealthPayload,
   RequestAiRecommendation,
@@ -425,7 +427,7 @@ function resolveLiveAiConfig() {
   return {
     apiUrl,
     apiKey,
-    model: defaultIlmuModel
+    model: compactText(store.systemConfig.model) || defaultIlmuModel
   };
 }
 
@@ -485,52 +487,47 @@ async function requestLiveAi(args: {
     throw new Error("Live AI configuration is incomplete.");
   }
 
-  const models = Array.from(new Set([config.model, "nemo-super", "ilmu-nemo-nano"].filter(Boolean)));
-  let lastError = "AI request failed.";
+  const response = await fetch(resolveChatCompletionsUrl(config.apiUrl), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${config.apiKey}`
+    },
+    body: JSON.stringify({
+      model: config.model,
+      temperature: args.temperature ?? 0.2,
+      reasoning_effort: "medium",
+      ...(args.jsonMode ? { response_format: { type: "json_object" } } : {}),
+      messages: [
+        { role: "system", content: args.systemPrompt },
+        { role: "user", content: args.userPrompt }
+      ]
+    })
+  });
 
-  for (const model of models) {
-    const response = await fetch(resolveChatCompletionsUrl(config.apiUrl), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${config.apiKey}`
-      },
-      body: JSON.stringify({
-        model,
-        temperature: args.temperature ?? 0.2,
-        reasoning_effort: "medium",
-        ...(args.jsonMode ? { response_format: { type: "json_object" } } : {}),
-        messages: [
-          { role: "system", content: args.systemPrompt },
-          { role: "user", content: args.userPrompt }
-        ]
-      })
-    });
-
-    if (response.ok) {
-      const payload = (await response.json()) as unknown;
-      const content = extractCompletionText(payload);
-
-      if (!content) {
-        throw new Error("AI provider returned an empty response.");
-      }
-
-      return content;
-    }
-
-    lastError = `AI request failed with status ${response.status}.`;
+  if (!response.ok) {
+    let errorMessage = `AI request failed with status ${response.status} for model '${config.model}'.`;
 
     try {
       const payload = (await response.json()) as unknown;
       if (isRecord(payload) && isRecord(payload.error) && typeof payload.error.message === "string") {
-        lastError = payload.error.message;
+        errorMessage = `${payload.error.message} (model: ${config.model})`;
       }
     } catch {
       // Ignore JSON parsing failures for provider errors.
     }
+
+    throw new Error(errorMessage);
   }
 
-  throw new Error(lastError);
+  const payload = (await response.json()) as unknown;
+  const content = extractCompletionText(payload);
+
+  if (!content) {
+    throw new Error("AI provider returned an empty response.");
+  }
+
+  return content;
 }
 
 export async function probeLiveAiConnection(): Promise<SystemAiHealthPayload> {
@@ -1056,6 +1053,81 @@ export async function generateRequestReportAttempt(args: {
         }
 
         return compactText(value.report);
+      }
+    );
+
+    return response ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export async function generatePhaseSummaryReport(args: {
+  workflow: WorkflowRecord;
+  project: ProjectRecord;
+  currentPhase: AiRecordPhase;
+  previousPhases: AiRecordPhase[];
+  attemptNumber: number;
+  previousReport?: string;
+  validatorFeedback?: string;
+}) {
+  const fallbackSections = [
+    `Project: ${args.project.subject}`,
+    `Current phase: ${args.currentPhase.title}`,
+    "Current phase plan:",
+    args.currentPhase.plan || "No plan recorded.",
+    args.previousPhases.length > 0
+      ? `Previous validated outcomes:\n${args.previousPhases
+          .map(
+            (phase) =>
+              `${phase.title}\nPlan: ${phase.plan || "No plan recorded."}\nOutcome: ${phase.outcome || "No validated outcome recorded."}`
+          )
+          .join("\n\n")}`
+      : "Previous validated outcomes: No previous phases recorded.",
+    "Management summary:",
+    `The project remains focused on ${firstMeaningfulSentence(args.currentPhase.plan, args.project.description)}.`,
+    args.currentPhase.outcome
+      ? `The most recent validated outcome indicates: ${firstMeaningfulSentence(args.currentPhase.outcome, "Outcome evidence is available.")}`
+      : "The current phase has not yet recorded a validated outcome, so the report focuses on plan readiness and prior validated progress."
+  ];
+  const fallback = fallbackSections.join("\n\n");
+
+  try {
+    const response = await requestLiveJson(
+      {
+        systemPrompt: [
+          "You generate management-ready phase reports for an AI workflow system.",
+          args.workflow.config.phaseReportPrompt,
+          "Return JSON only with one key: report.",
+          "The report must be formatted text that is easy to copy into a report or chat update."
+        ].join("\n"),
+        userPrompt: [
+          `Project subject: ${args.project.subject}`,
+          `Branch office: ${args.project.branchOfficeName}`,
+          `Attempt number: ${args.attemptNumber}`,
+          `Current phase title: ${args.currentPhase.title}`,
+          `Current phase plan:\n${args.currentPhase.plan || "No plan recorded."}`,
+          args.previousPhases.length > 0
+            ? `Previous phase plans and achieved outcomes:\n${args.previousPhases
+                .map(
+                  (phase) =>
+                    `${phase.title}\nPlan:\n${phase.plan || "No plan recorded."}\nOutcome:\n${phase.outcome || "No validated outcome recorded."}`
+                )
+                .join("\n\n")}`
+            : "Previous phase plans and achieved outcomes:\nNo previous phases recorded.",
+          args.previousReport ? `Previous generated report:\n${args.previousReport}` : "",
+          args.validatorFeedback ? `Validator feedback:\n${args.validatorFeedback}` : ""
+        ]
+          .filter(Boolean)
+          .join("\n\n"),
+        temperature: 0.2
+      },
+      (value) => {
+        if (!isRecord(value) || typeof value.report !== "string" || !compactText(value.report)) {
+          return null;
+        }
+
+        return value.report.trim();
       }
     );
 

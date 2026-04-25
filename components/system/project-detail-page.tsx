@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import { AppShell, FileUploadBox, PrimaryButton, SecondaryButton, TextAreaField } from "@/components";
 import { apiRequest } from "@/src/client/api";
 import { useDemoSession } from "@/src/client/use-demo-session";
-import { databaseAttachmentOptions } from "@/src/modules/system/database-options";
+import { buildDatabaseAttachmentTree } from "@/src/modules/system/database-options";
+import { DatabaseContextSelector } from "@/components/system/database-context-selector";
 import { filesToAttachmentReferences } from "@/components/system/file-utils";
 import { formatDateTime } from "@/components/system/format";
 import { AiTransparencyPanel, EmptyBlock, PageSection, WorkflowStatusBadge } from "@/components/system/ui";
-import type { DatabasePayload, ProjectPhaseRecord, ProjectRecord } from "@/types/system";
+import type { DatabasePayload, GeneratePhaseReportResult, ProjectPhaseRecord, ProjectRecord } from "@/types/system";
 
 function PhaseCard({
   phase,
@@ -100,11 +101,14 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
   const { session, loading: sessionLoading, signOut } = useDemoSession();
   const [project, setProject] = useState<ProjectRecord | null>(null);
   const [outcomeInput, setOutcomeInput] = useState("");
-  const [phaseAttachments, setPhaseAttachments] = useState<FileList | null>(null);
+  const [phaseAttachments, setPhaseAttachments] = useState<File[]>([]);
   const [selectedDatabasePaths, setSelectedDatabasePaths] = useState<string[]>([]);
   const [database, setDatabase] = useState<DatabasePayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [generatingPhaseReport, setGeneratingPhaseReport] = useState(false);
+  const [phaseReportResult, setPhaseReportResult] = useState<GeneratePhaseReportResult | null>(null);
+  const [copiedPhaseReport, setCopiedPhaseReport] = useState(false);
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
 
@@ -151,6 +155,10 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
     () => project?.phases.find((phase) => phase.status === "Current") ?? null,
     [project]
   );
+  const databaseAttachmentTree = useMemo(
+    () => (database ? buildDatabaseAttachmentTree(database.company) : []),
+    [database]
+  );
 
   if (!session || sessionLoading) {
     return null;
@@ -189,7 +197,7 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
       });
       setProject(data.project);
       setOutcomeInput("");
-      setPhaseAttachments(null);
+      setPhaseAttachments([]);
       setFeedback(
         data.project.lifecycleState === "Completed"
           ? "Project phase validated and the project is now closed."
@@ -201,6 +209,41 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function handleGeneratePhaseReport() {
+    if (!session || !project) {
+      return;
+    }
+
+    setGeneratingPhaseReport(true);
+    setCopiedPhaseReport(false);
+    setFeedback("");
+
+    try {
+      const data = await apiRequest<{ result: GeneratePhaseReportResult }>(
+        `/api/projects/${project.id}/phase-report`,
+        {
+          method: "POST",
+          session
+        }
+      );
+      setPhaseReportResult(data.result);
+      setFeedback("Phase report generated successfully.");
+    } catch (submitError) {
+      setFeedback(submitError instanceof Error ? submitError.message : "Phase report generation failed.");
+    } finally {
+      setGeneratingPhaseReport(false);
+    }
+  }
+
+  async function handleCopyPhaseReport() {
+    if (!phaseReportResult?.report || typeof navigator === "undefined" || !navigator.clipboard) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(phaseReportResult.report);
+    setCopiedPhaseReport(true);
   }
 
   return (
@@ -263,6 +306,53 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
                 </div>
               </div>
             </div>
+            {project.workflowId && project.phases.length > 0 ? (
+              <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Phase report</p>
+                    <p className="mt-2 text-body text-synapse-muted">
+                      Generate a copy-ready phase report from AI records using preset prompt 9.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <PrimaryButton
+                      type="button"
+                      loading={generatingPhaseReport}
+                      onClick={handleGeneratePhaseReport}
+                    >
+                      Generate phase report
+                    </PrimaryButton>
+                    {phaseReportResult ? (
+                      <SecondaryButton type="button" onClick={handleCopyPhaseReport}>
+                        {copiedPhaseReport ? "Copied" : "Copy report"}
+                      </SecondaryButton>
+                    ) : null}
+                  </div>
+                </div>
+                {phaseReportResult ? (
+                  <div className="mt-4 grid gap-4">
+                    <textarea
+                      className="min-h-56 w-full rounded-[18px] border border-synapse-border bg-synapse-elevated p-4 text-body text-synapse-text shadow-sm"
+                      readOnly
+                      value={phaseReportResult.report}
+                    />
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <div className="rounded-[18px] border border-synapse-border bg-synapse-elevated p-4">
+                        <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Generated for</p>
+                        <p className="mt-2 text-body text-synapse-text">{phaseReportResult.phaseTitle}</p>
+                      </div>
+                      <div className="rounded-[18px] border border-synapse-border bg-synapse-elevated p-4">
+                        <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Validation</p>
+                        <p className="mt-2 text-body text-synapse-text">
+                          {phaseReportResult.validation?.summary ?? "No validation summary available."}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </PageSection>
 
           <PageSection
@@ -285,44 +375,19 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
                       <FileUploadBox
                         label="Attach phase files"
                         hint="Attach field notes, CSVs, markdown, JSON, or other supported files to enrich the outcome input."
-                      />
-                      <input
-                        className="text-body text-synapse-muted"
-                        type="file"
-                        multiple
+                        files={phaseAttachments}
                         accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,.txt,.rtf,.md,.json,.log,.xml"
-                        onChange={(event) => setPhaseAttachments(event.target.files)}
+                        onFilesChange={(files) => setPhaseAttachments((current) => [...current, ...files])}
+                        onRemoveFile={(index) =>
+                          setPhaseAttachments((current) => current.filter((_, currentIndex) => currentIndex !== index))
+                        }
                       />
                     </div>
-                    <div className="grid gap-3 rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
-                      <p className="text-card-title text-synapse-text">Attach structured database context</p>
-                      <div className="grid gap-3 md:grid-cols-2">
-                        {databaseAttachmentOptions.map((option) => (
-                          <label key={option.path} className="flex items-start gap-3 text-body text-synapse-text">
-                            <input
-                              type="checkbox"
-                              checked={selectedDatabasePaths.includes(option.path)}
-                              onChange={(event) =>
-                                setSelectedDatabasePaths((current) =>
-                                  event.target.checked
-                                    ? [...current, option.path]
-                                    : current.filter((path) => path !== option.path)
-                                )
-                              }
-                            />
-                            <span>
-                              <span className="block font-medium">{option.label}</span>
-                              <span className="text-synapse-muted">{option.description}</span>
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                      {database ? (
-                        <p className="text-meta text-synapse-muted">
-                          Company context available: {database.company.generalInfo.companyName}
-                        </p>
-                      ) : null}
-                    </div>
+                    <DatabaseContextSelector
+                      nodes={databaseAttachmentTree}
+                      selectedPaths={selectedDatabasePaths}
+                      onChange={setSelectedDatabasePaths}
+                    />
                     <PrimaryButton loading={submitting} type="submit">
                       Submit outcome and progress phase
                     </PrimaryButton>

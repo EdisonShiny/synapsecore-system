@@ -1,6 +1,6 @@
 "use client";
 
-import { type Dispatch, type FormEvent, type SetStateAction, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AppShell,
@@ -11,6 +11,7 @@ import {
   SelectField,
   TextAreaField
 } from "@/components";
+import { DatabaseContextSelector } from "@/components/system/database-context-selector";
 import { formatDateTime } from "@/components/system/format";
 import { filesToAttachmentReferences } from "@/components/system/file-utils";
 import {
@@ -23,7 +24,7 @@ import {
 } from "@/components/system/ui";
 import { apiRequest } from "@/src/client/api";
 import { useDemoSession } from "@/src/client/use-demo-session";
-import { databaseAttachmentOptions } from "@/src/modules/system/database-options";
+import { buildDatabaseAttachmentTree } from "@/src/modules/system/database-options";
 import type {
   DatabasePayload,
   RequestApplicationRecord,
@@ -39,10 +40,10 @@ export function RequestsPage() {
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [projectTitle, setProjectTitle] = useState("");
   const [applicationText, setApplicationText] = useState("");
-  const [applicationAttachments, setApplicationAttachments] = useState<FileList | null>(null);
+  const [applicationAttachments, setApplicationAttachments] = useState<File[]>([]);
   const [applicationDatabasePaths, setApplicationDatabasePaths] = useState<string[]>([]);
   const [reapplyText, setReapplyText] = useState("");
-  const [reapplyAttachments, setReapplyAttachments] = useState<FileList | null>(null);
+  const [reapplyAttachments, setReapplyAttachments] = useState<File[]>([]);
   const [reapplyDatabasePaths, setReapplyDatabasePaths] = useState<string[]>([]);
   const [decision, setDecision] = useState<"Approved" | "Rejected">("Approved");
   const [decisionComments, setDecisionComments] = useState("");
@@ -110,6 +111,10 @@ export function RequestsPage() {
     () => payload?.requests.find((request) => request.id === selectedRequestId) ?? payload?.requests[0] ?? null,
     [payload, selectedRequestId]
   );
+  const databaseAttachmentTree = useMemo(
+    () => (database ? buildDatabaseAttachmentTree(database.company) : []),
+    [database]
+  );
 
   useEffect(() => {
     if (selectedRequest?.status === "Rejected") {
@@ -163,7 +168,7 @@ export function RequestsPage() {
 
       setProjectTitle("");
       setApplicationText("");
-      setApplicationAttachments(null);
+      setApplicationAttachments([]);
       setApplicationDatabasePaths([]);
       await reloadRequests({ selectedRequestId: data.request.id });
       setFeedback("Request application submitted and sent into the approval AI workflow.");
@@ -200,7 +205,7 @@ export function RequestsPage() {
         }
       );
 
-      setReapplyAttachments(null);
+      setReapplyAttachments([]);
       await reloadRequests({ selectedRequestId: data.request.id });
       setFeedback("Rejected request has been reapplied and sent back for HQ review.");
     } catch (submitError) {
@@ -271,43 +276,6 @@ export function RequestsPage() {
     } finally {
       setSubmittingDecision(false);
     }
-  }
-
-  function renderDatabaseSelection(
-    selectedPaths: string[],
-    setSelectedPaths: Dispatch<SetStateAction<string[]>>
-  ) {
-    return (
-      <div className="grid gap-3 rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
-        <div>
-          <p className="text-card-title text-synapse-text">Attach structured database context</p>
-          <p className="mt-1 text-body text-synapse-muted">
-            Select structured company data to send along with the request or reapplication.
-          </p>
-        </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          {databaseAttachmentOptions.map((option) => (
-            <label key={option.path} className="flex items-start gap-3 text-body text-synapse-text">
-              <input
-                type="checkbox"
-                checked={selectedPaths.includes(option.path)}
-                onChange={(event) =>
-                  setSelectedPaths((current) =>
-                    event.target.checked
-                      ? [...current, option.path]
-                      : current.filter((path) => path !== option.path)
-                  )
-                }
-              />
-              <span>
-                <span className="block font-medium">{option.label}</span>
-                <span className="text-synapse-muted">{option.description}</span>
-              </span>
-            </label>
-          ))}
-        </div>
-      </div>
-    );
   }
 
   const requestStats = [
@@ -430,16 +398,22 @@ export function RequestsPage() {
               <FileUploadBox
                 label="Attach support documents"
                 hint="Text-like files will be read inline. Other supported business files travel as attachment metadata."
-              />
-              <input
-                className="text-body text-synapse-muted"
-                type="file"
-                multiple
+                files={applicationAttachments}
                 accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,.txt,.rtf,.md,.json,.log,.xml"
-                onChange={(event) => setApplicationAttachments(event.target.files)}
+                onFilesChange={(files) => setApplicationAttachments((current) => [...current, ...files])}
+                onRemoveFile={(index) =>
+                  setApplicationAttachments((current) =>
+                    current.filter((_, currentIndex) => currentIndex !== index)
+                  )
+                }
               />
             </div>
-            {renderDatabaseSelection(applicationDatabasePaths, setApplicationDatabasePaths)}
+            <DatabaseContextSelector
+              nodes={databaseAttachmentTree}
+              selectedPaths={applicationDatabasePaths}
+              onChange={setApplicationDatabasePaths}
+              description="Select structured company data to send along with the request application."
+            />
             <PrimaryButton
               loading={submittingApplication}
               type="submit"
@@ -740,16 +714,22 @@ export function RequestsPage() {
                     <FileUploadBox
                       label="Attach revised support documents"
                       hint="Use this if you want to add new evidence before reapplying."
-                    />
-                    <input
-                      className="text-body text-synapse-muted"
-                      type="file"
-                      multiple
+                      files={reapplyAttachments}
                       accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,.txt,.rtf,.md,.json,.log,.xml"
-                      onChange={(event) => setReapplyAttachments(event.target.files)}
+                      onFilesChange={(files) => setReapplyAttachments((current) => [...current, ...files])}
+                      onRemoveFile={(index) =>
+                        setReapplyAttachments((current) =>
+                          current.filter((_, currentIndex) => currentIndex !== index)
+                        )
+                      }
                     />
                   </div>
-                  {renderDatabaseSelection(reapplyDatabasePaths, setReapplyDatabasePaths)}
+                  <DatabaseContextSelector
+                    nodes={databaseAttachmentTree}
+                    selectedPaths={reapplyDatabasePaths}
+                    onChange={setReapplyDatabasePaths}
+                    description="Select structured company data to send along with the revised request."
+                  />
                   <PrimaryButton loading={submittingReapply} type="submit">
                     Reapply request
                   </PrimaryButton>

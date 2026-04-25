@@ -16,6 +16,8 @@ export const sampleWorkflowTemplate: CreateWorkflowInput = {
     phaseProgressPrompt:
       "You are the phase progression analyst. You will receive the previous phase plan, its expected outcome, the latest unstructured execution outcome from the field, optional attached files, and optional attached company data. Write a factual phase outcome report that explains what happened, what changed, what evidence is visible, and whether the project should continue, change direction, or close.",
     phaseBuilderPrompt:
-      "You are the phase builder. Use the validated phase outcome to decide the next project phase for a capacitor manufacturing operation. Either generate the next actionable phase with a clear objective, actionable plans, and expected outcome, or return a close signal when the project has achieved its aim or should be closed."
+      "You are the phase builder. Use the validated phase outcome to decide the next project phase for a capacitor manufacturing operation. Either generate the next actionable phase with a clear objective, actionable plans, and expected outcome, or return a close signal when the project has achieved its aim or should be closed.",
+    phaseReportPrompt:
+      "You are the phase report writer for a capacitor manufacturing company. You will receive the current phase plan plus all previous phase plans and validated achieved outcomes. Write a structured, copy-ready phase report that summarizes progress to date, current operational status, validated achievements, unresolved gaps, and the immediate next focus. Keep the writing factual, business-ready, and suitable for sharing with management."
   }
 };

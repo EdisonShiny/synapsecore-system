@@ -4,6 +4,7 @@ import {
   createIssueInsight,
   createWorkflowProjectCandidates,
   generateNextPhaseFromOutcome,
+  generatePhaseSummaryReport,
   createOverallInsight,
   createPlanInsight,
   createProjectAiReport,
@@ -16,7 +17,10 @@ import {
   generateWorkflowReportAttempt,
   generateWorkflowValidation
 } from "@/src/services/system-ai";
-import { databaseAttachmentOptions, getDatabaseSelectionSummary } from "@/src/modules/system/database-options";
+import {
+  buildDatabaseAttachmentOptions,
+  getDatabaseSelectionSummary
+} from "@/src/modules/system/database-options";
 import {
   getSystemDatabaseInfo,
   getSystemStore,
@@ -29,6 +33,7 @@ import {
 import type {
   AppealProjectInput,
   AttachmentReference,
+  DatabaseNodeKind,
   DatabasePayload,
   CreateIssueInput,
   CreateCustomDatabaseNodeInput,
@@ -40,7 +45,9 @@ import type {
   CreateWorkflowInput,
   DemoAccountSummary,
   DashboardPayload,
+  DeleteCustomDatabaseNodeInput,
   ExecuteWorkflowInput,
+  GeneratePhaseReportResult,
   IssueThread,
   OfficeAccount,
   OfficeRole,
@@ -57,6 +64,8 @@ import type {
   SystemSession,
   SystemSettingsPayload,
   UpdateRequestPromptConfigInput,
+  UpdateDatabaseNodeDescriptionInput,
+  UpdateDatabaseFieldValueInput,
   UpdateCustomDatabaseNodeInput,
   UpdateWorkflowInput,
   UpdateSystemAiConfigInput,
@@ -124,13 +133,14 @@ function sanitizeText(value: string) {
 
 function resolveDatabaseContextSummaries(selectedPaths: string[]) {
   const store = getSystemStore();
+  const options = buildDatabaseAttachmentOptions(store.companyDatabase);
   const uniquePaths = Array.from(
     new Set(selectedPaths.map((path) => sanitizeText(path)).filter(Boolean))
   );
 
   return uniquePaths
     .map((path) => {
-      const option = databaseAttachmentOptions.find((entry) => entry.path === path);
+      const option = options.find((entry) => entry.path === path);
       const summary = getDatabaseSelectionSummary(store.companyDatabase, path);
 
       if (!option || !summary) {
@@ -183,7 +193,8 @@ function normalizeWorkflowConfig(config: WorkflowPromptConfig): WorkflowPromptCo
     validatorPrompt: sanitizeText(config.validatorPrompt),
     projectBuilderPrompt: sanitizeText(config.projectBuilderPrompt),
     phaseProgressPrompt: sanitizeText(config.phaseProgressPrompt),
-    phaseBuilderPrompt: sanitizeText(config.phaseBuilderPrompt)
+    phaseBuilderPrompt: sanitizeText(config.phaseBuilderPrompt),
+    phaseReportPrompt: sanitizeText(config.phaseReportPrompt)
   };
 }
 
@@ -196,9 +207,10 @@ function validateWorkflowConfig(config: WorkflowPromptConfig) {
     !normalized.validatorPrompt ||
     !normalized.projectBuilderPrompt ||
     !normalized.phaseProgressPrompt ||
-    !normalized.phaseBuilderPrompt
+    !normalized.phaseBuilderPrompt ||
+    !normalized.phaseReportPrompt
   ) {
-    throw new Error("All six preset prompts are required for a workflow.");
+    throw new Error("All workflow preset prompts are required.");
   }
 
   return normalized;
@@ -226,7 +238,8 @@ function buildRequestApprovalWorkflowConfig(requestPrompt: string): WorkflowReco
       validatorPrompt: requestValidatorPrompt,
       projectBuilderPrompt: "",
       phaseProgressPrompt: "",
-      phaseBuilderPrompt: ""
+      phaseBuilderPrompt: "",
+      phaseReportPrompt: ""
     }
   };
 }
@@ -373,6 +386,74 @@ function createInitialProjectPhase(
     completedAt: null,
     createdAt: nowIso()
   };
+}
+
+function formatPhasePlanRecord(phase: ProjectPhaseRecord) {
+  return [
+    `Objective: ${phase.objective || "No objective recorded."}`,
+    phase.actionablePlans.length > 0
+      ? `Actionable plans:\n- ${phase.actionablePlans.join("\n- ")}`
+      : "Actionable plans: No plans recorded.",
+    `Expected outcome: ${phase.expectedOutcome || "No expected outcome recorded."}`
+  ].join("\n\n");
+}
+
+function formatPhaseOutcomeRecord(phase: ProjectPhaseRecord) {
+  const sections = [
+    phase.completionReport || "",
+    phase.validationSummary ? `Validation: ${phase.validationSummary}` : "",
+    phase.completionInput ? `Original field input: ${phase.completionInput}` : ""
+  ].filter(Boolean);
+
+  return sections.join("\n\n");
+}
+
+function syncProjectAiRecord(store: ReturnType<typeof getSystemStore>, project: ProjectRecord) {
+  const nextRecord = {
+    projectId: project.id,
+    projectSubject: project.subject,
+    phases: project.phases
+      .slice()
+      .sort((left, right) => left.phaseNumber - right.phaseNumber)
+      .map((phase) => ({
+        phaseId: phase.id,
+        phaseNumber: phase.phaseNumber,
+        title: phase.title,
+        plan: formatPhasePlanRecord(phase),
+        outcome: formatPhaseOutcomeRecord(phase),
+        updatedAt: phase.completedAt ?? phase.createdAt
+      })),
+    updatedAt: project.updatedAt
+  };
+  const existingIndex = store.companyDatabase.aiRecords.projects.findIndex(
+    (entry) => entry.projectId === project.id
+  );
+
+  if (existingIndex >= 0) {
+    store.companyDatabase.aiRecords.projects[existingIndex] = nextRecord;
+    return;
+  }
+
+  store.companyDatabase.aiRecords.projects.unshift(nextRecord);
+}
+
+function rebuildAiRecords(store: ReturnType<typeof getSystemStore>) {
+  store.companyDatabase.aiRecords.projects = store.projects.map((project) => ({
+    projectId: project.id,
+    projectSubject: project.subject,
+    phases: project.phases
+      .slice()
+      .sort((left, right) => left.phaseNumber - right.phaseNumber)
+      .map((phase) => ({
+        phaseId: phase.id,
+        phaseNumber: phase.phaseNumber,
+        title: phase.title,
+        plan: formatPhasePlanRecord(phase),
+        outcome: formatPhaseOutcomeRecord(phase),
+        updatedAt: phase.completedAt ?? phase.createdAt
+      })),
+    updatedAt: project.updatedAt
+  }));
 }
 
 function createWorkflowBackedProject(args: {
@@ -653,6 +734,7 @@ export async function runWorkflow(office: OfficeAccount, workflowId: string, inp
       run.updatedAt = run.completedAt;
 
       store.projects.unshift(...nextProjects);
+      nextProjects.forEach((project) => syncProjectAiRecord(store, project));
       workflow.projectCount += nextProjects.length;
       break;
     }
@@ -842,6 +924,131 @@ export function getProjectForOffice(projectId: string, office: OfficeAccount) {
   return project;
 }
 
+export async function generatePhaseReportForProject(
+  office: OfficeAccount,
+  projectId: string
+): Promise<GeneratePhaseReportResult> {
+  const store = getSystemStore();
+  const project = filterProjectsForOffice(office).find((entry) => entry.id === projectId);
+
+  if (!project) {
+    throw new Error("Project not found.");
+  }
+
+  const workflow = project.workflowId
+    ? store.workflows.find((entry) => entry.id === project.workflowId)
+    : null;
+
+  if (!workflow) {
+    throw new Error("This project is not linked to a workflow with report prompts.");
+  }
+
+  const aiRecord = store.companyDatabase.aiRecords.projects.find((entry) => entry.projectId === project.id);
+
+  if (!aiRecord || aiRecord.phases.length === 0) {
+    throw new Error("AI records for this project are not available yet.");
+  }
+
+  const sortedAiPhases = aiRecord.phases
+    .slice()
+    .sort((left, right) => left.phaseNumber - right.phaseNumber);
+  const currentProjectPhase =
+    project.phases
+      .slice()
+      .sort((left, right) => left.phaseNumber - right.phaseNumber)
+      .find((phase) => phase.status === "Current") ??
+    project.phases
+      .slice()
+      .sort((left, right) => right.phaseNumber - left.phaseNumber)[0] ??
+    null;
+
+  if (!currentProjectPhase) {
+    throw new Error("No project phases are available for report generation.");
+  }
+
+  const currentAiPhase =
+    sortedAiPhases.find((phase) => phase.phaseId === currentProjectPhase.id) ??
+    sortedAiPhases[sortedAiPhases.length - 1];
+  const previousAiPhases = sortedAiPhases.filter((phase) => phase.phaseNumber < currentAiPhase.phaseNumber);
+  const reportInput = [
+    `Project subject: ${project.subject}`,
+    `Branch office: ${project.branchOfficeName}`,
+    `Current phase title: ${currentAiPhase.title}`,
+    `Current phase plan:\n${currentAiPhase.plan || "No current phase plan recorded."}`,
+    previousAiPhases.length > 0
+      ? `Previous phase plans and achieved outcomes:\n${previousAiPhases
+          .map(
+            (phase) =>
+              `${phase.title}\nPlan:\n${phase.plan || "No plan recorded."}\nOutcome:\n${phase.outcome || "No validated outcome recorded."}`
+          )
+          .join("\n\n")}`
+      : "Previous phase plans and achieved outcomes:\nNo previous phases recorded."
+  ].join("\n\n");
+
+  let previousReport = "";
+  let previousFeedback = "";
+  const attempts: WorkflowAttempt[] = [];
+  let finalReport = "";
+  let finalExtraction: WorkflowExtraction | null = null;
+  let finalValidation = null;
+
+  for (let attemptNumber = 1; attemptNumber <= 3; attemptNumber += 1) {
+    const report = await generatePhaseSummaryReport({
+      workflow,
+      project,
+      currentPhase: currentAiPhase,
+      previousPhases: previousAiPhases,
+      attemptNumber,
+      previousReport,
+      validatorFeedback: previousFeedback
+    });
+    const extraction = await generateWorkflowExtraction({
+      workflow,
+      report,
+      unstructuredInput: reportInput
+    });
+    const validation = await generateWorkflowValidation({
+      workflow,
+      extraction,
+      unstructuredInput: reportInput,
+      attemptNumber
+    });
+    const attempt: WorkflowAttempt = {
+      id: createId(),
+      attemptNumber,
+      report,
+      extraction,
+      validation,
+      createdAt: nowIso()
+    };
+
+    attempts.push(attempt);
+    finalReport = report;
+    finalExtraction = extraction;
+    finalValidation = validation;
+
+    if (validation.result === "Pass") {
+      return {
+        projectId: project.id,
+        phaseId: currentAiPhase.phaseId,
+        phaseTitle: currentAiPhase.title,
+        report,
+        extraction,
+        validation,
+        attempts,
+        generatedAt: nowIso()
+      };
+    }
+
+    previousReport = report;
+    previousFeedback = validation.retryInstruction;
+  }
+
+  throw new Error(
+    finalValidation?.summary || "Phase report generation failed because validation never passed."
+  );
+}
+
 export function createProject(office: OfficeAccount, input: CreateProjectInput) {
   ensureBranchUser(office);
 
@@ -874,6 +1081,7 @@ export function createProject(office: OfficeAccount, input: CreateProjectInput) 
   };
 
   store.projects.unshift(project);
+  syncProjectAiRecord(store, project);
   saveSystemStore(store);
   return project;
 }
@@ -1345,6 +1553,7 @@ export function submitProjectAppeal(
       note: "Appealed project returned to HQ approval queue."
     }
   );
+  syncProjectAiRecord(store, project);
 
   saveSystemStore(store);
   return project;
@@ -1594,6 +1803,7 @@ export async function progressProjectPhase(
   }
 
   project.updatedAt = nowIso();
+  syncProjectAiRecord(store, project);
   workflow.updatedAt = nowIso();
   workflow.lastRunAt = run.updatedAt;
   store.workflowRuns.unshift(run);
@@ -1852,6 +2062,7 @@ export function clearOfficeData(office: OfficeAccount) {
     store.issues = [];
     store.planSubmissions = [];
     store.planInsights = [];
+    rebuildAiRecords(store);
     recomputeWorkflowMetrics(store);
     saveSystemStore(store);
     return;
@@ -1866,6 +2077,7 @@ export function clearOfficeData(office: OfficeAccount) {
   );
   store.planSubmissions = store.planSubmissions.filter((submission) => submission.officeId !== office.id);
   store.planInsights = store.planInsights.filter((insight) => insight.officeId !== office.id);
+  rebuildAiRecords(store);
   recomputeWorkflowMetrics(store);
   recomputeOverallInsight(store);
   saveSystemStore(store);
@@ -1897,52 +2109,198 @@ export function getCompanyDatabase(): DatabasePayload {
 }
 
 function findCustomDatabaseNode(nodes: CustomDatabaseNode[], nodeId: string): CustomDatabaseNode | null {
-  for (const node of nodes) {
-    if (node.id === nodeId) {
-      return node;
-    }
+  return nodes.find((node) => node.id === nodeId) ?? null;
+}
 
-    const child = findCustomDatabaseNode(node.children, nodeId);
+function isDeletedPath(path: string, deletedPaths: string[]) {
+  return deletedPaths.some((deletedPath) => path === deletedPath || path.startsWith(`${deletedPath}.`));
+}
 
-    if (child) {
-      return child;
+function collectCustomNodeIdsForRemoval(
+  nodes: CustomDatabaseNode[],
+  nodeId: string
+): Set<string> {
+  const idsToRemove = new Set<string>([nodeId]);
+  let expanded = true;
+
+  while (expanded) {
+    expanded = false;
+
+    for (const node of nodes) {
+      if (!idsToRemove.has(node.id) && node.parentPath.startsWith("company.customTree:")) {
+        const parentId = node.parentPath.replace("company.customTree:", "");
+
+        if (idsToRemove.has(parentId)) {
+          idsToRemove.add(node.id);
+          expanded = true;
+        }
+      }
     }
   }
 
-  return null;
+  return idsToRemove;
+}
+
+export function updateDatabaseNodeDescription(
+  input: UpdateDatabaseNodeDescriptionInput
+): DatabasePayload {
+  const store = getSystemStore();
+  const path = sanitizeText(input.path);
+
+  if (!path) {
+    throw new Error("Database path is required.");
+  }
+
+  store.companyDatabase.nodeDescriptions[path] = sanitizeText(input.description);
+  if (typeof input.label === "string" && sanitizeText(input.label)) {
+    store.companyDatabase.nodeLabels[path] = sanitizeText(input.label);
+  }
+  saveSystemStore(store);
+  return getCompanyDatabase();
+}
+
+export function updateDatabaseFieldValue(
+  input: UpdateDatabaseFieldValueInput
+): DatabasePayload {
+  const store = getSystemStore();
+  const path = sanitizeText(input.path);
+  const value = sanitizeText(input.value);
+  const label = sanitizeText(input.label ?? "");
+
+  if (label) {
+    store.companyDatabase.fieldLabels[path] = label;
+  }
+
+  const aiRecordMatch = /^aiRecords\.projects:([^.:]+)\.phases:([^.:]+)\.(plan|outcome)$/.exec(path);
+  if (aiRecordMatch) {
+    const [, projectId, phaseId, attribute] = aiRecordMatch;
+    const project = store.companyDatabase.aiRecords.projects.find((entry) => entry.projectId === projectId);
+    const phase = project?.phases.find((entry) => entry.phaseId === phaseId);
+
+    if (!project || !phase) {
+      throw new Error("AI record field was not found.");
+    }
+
+    if (attribute === "plan") {
+      phase.plan = value;
+    } else {
+      phase.outcome = value;
+    }
+    phase.updatedAt = nowIso();
+    project.updatedAt = phase.updatedAt;
+    saveSystemStore(store);
+    return getCompanyDatabase();
+  }
+
+  const inventoryMatch = /^company\.inventoryRecords\.(monthly|yearly)\.(\d+)\.(period|value|note)$/.exec(path);
+  if (inventoryMatch) {
+    const [, bucket, indexText, attribute] = inventoryMatch;
+    const index = Number(indexText);
+    const record = store.companyDatabase.inventoryRecords[bucket as "monthly" | "yearly"][index];
+
+    if (!record) {
+      throw new Error("Built-in inventory field was not found.");
+    }
+
+    if (attribute === "value") {
+      record.value = Number.isFinite(Number(value)) ? Number(value) : 0;
+    } else if (attribute === "period") {
+      record.period = value;
+    } else {
+      record.note = value;
+    }
+
+    saveSystemStore(store);
+    return getCompanyDatabase();
+  }
+
+  const salesMatch = /^company\.salesReports\.(monthly|yearly)\.(\d+)\.(period|sales|profit|note)$/.exec(path);
+  if (salesMatch) {
+    const [, bucket, indexText, attribute] = salesMatch;
+    const index = Number(indexText);
+    const record = store.companyDatabase.salesReports[bucket as "monthly" | "yearly"][index];
+
+    if (!record) {
+      throw new Error("Built-in sales field was not found.");
+    }
+
+    if (attribute === "sales" || attribute === "profit") {
+      record[attribute] = Number.isFinite(Number(value)) ? Number(value) : 0;
+    } else if (attribute === "period") {
+      record.period = value;
+    } else {
+      record.note = value;
+    }
+
+    saveSystemStore(store);
+    return getCompanyDatabase();
+  }
+
+  const procurementMatch = /^company\.procurementRecords\.(monthly|yearly)\.(\d+)\.(period|value|note)$/.exec(path);
+  if (procurementMatch) {
+    const [, bucket, indexText, attribute] = procurementMatch;
+    const index = Number(indexText);
+    const record = store.companyDatabase.procurementRecords[bucket as "monthly" | "yearly"][index];
+
+    if (!record) {
+      throw new Error("Built-in procurement field was not found.");
+    }
+
+    if (attribute === "value") {
+      record.value = Number.isFinite(Number(value)) ? Number(value) : 0;
+    } else if (attribute === "period") {
+      record.period = value;
+    } else {
+      record.note = value;
+    }
+
+    saveSystemStore(store);
+    return getCompanyDatabase();
+  }
+
+  switch (path) {
+    case "company.generalInfo.companyName":
+      store.companyDatabase.generalInfo.companyName = value;
+      break;
+    case "company.generalInfo.workingField":
+      store.companyDatabase.generalInfo.workingField = value;
+      break;
+    case "company.generalInfo.overview":
+      store.companyDatabase.generalInfo.overview = value;
+      break;
+    default:
+      throw new Error("Built-in database field was not found.");
+  }
+
+  saveSystemStore(store);
+  return getCompanyDatabase();
 }
 
 export function addCustomDatabaseNode(input: CreateCustomDatabaseNodeInput): DatabasePayload {
   const store = getSystemStore();
   const label = sanitizeText(input.label);
+  const description = sanitizeText(input.description ?? "");
   const value = sanitizeText(input.value ?? "");
+  const parentPath = sanitizeText(input.parentPath ?? "") || "root";
+  const kind: DatabaseNodeKind = input.kind === "field" ? "field" : "branch";
 
   if (!label) {
     throw new Error("Database field name is required.");
   }
 
   const timestamp = nowIso();
-  const node = {
+  const node: CustomDatabaseNode = {
     id: createId(),
+    kind,
     label,
-    value,
-    children: [],
+    description,
+    value: kind === "field" ? value : "",
+    parentPath,
     createdAt: timestamp,
     updatedAt: timestamp
   };
 
-  if (input.parentId) {
-    const parent = findCustomDatabaseNode(store.companyDatabase.customTree, input.parentId);
-
-    if (!parent) {
-      throw new Error("Parent database branch was not found.");
-    }
-
-    parent.children.push(node);
-    parent.updatedAt = timestamp;
-  } else {
-    store.companyDatabase.customTree.push(node);
-  }
+  store.companyDatabase.customTree.push(node);
 
   saveSystemStore(store);
   return getCompanyDatabase();
@@ -1951,7 +2309,9 @@ export function addCustomDatabaseNode(input: CreateCustomDatabaseNodeInput): Dat
 export function updateCustomDatabaseNode(input: UpdateCustomDatabaseNodeInput): DatabasePayload {
   const store = getSystemStore();
   const label = sanitizeText(input.label);
+  const description = sanitizeText(input.description);
   const value = sanitizeText(input.value);
+  const kind: DatabaseNodeKind = input.kind === "field" ? "field" : "branch";
 
   if (!label) {
     throw new Error("Database field name is required.");
@@ -1964,8 +2324,45 @@ export function updateCustomDatabaseNode(input: UpdateCustomDatabaseNodeInput): 
   }
 
   node.label = label;
-  node.value = value;
+  node.kind = kind;
+  node.description = description;
+  node.value = kind === "field" ? value : "";
   node.updatedAt = nowIso();
+  saveSystemStore(store);
+
+  return getCompanyDatabase();
+}
+
+export function deleteCustomDatabaseNode(
+  input: DeleteCustomDatabaseNodeInput
+): DatabasePayload {
+  const store = getSystemStore();
+  const nodeId = sanitizeText(input.id ?? "");
+  const path = sanitizeText(input.path ?? "");
+
+  if (nodeId) {
+    const node = findCustomDatabaseNode(store.companyDatabase.customTree, nodeId);
+
+    if (!node) {
+      throw new Error("Database entry was not found.");
+    }
+
+    const idsToRemove = collectCustomNodeIdsForRemoval(store.companyDatabase.customTree, nodeId);
+    store.companyDatabase.customTree = store.companyDatabase.customTree.filter(
+      (entry) => !idsToRemove.has(entry.id)
+    );
+    saveSystemStore(store);
+
+    return getCompanyDatabase();
+  }
+
+  if (!path) {
+    throw new Error("Database entry was not found.");
+  }
+
+  if (!isDeletedPath(path, store.companyDatabase.deletedPaths)) {
+    store.companyDatabase.deletedPaths.push(path);
+  }
   saveSystemStore(store);
 
   return getCompanyDatabase();
@@ -1978,6 +2375,7 @@ export function getSystemSettings(): SystemSettingsPayload {
     aiConfig: {
       apiUrl: store.systemConfig.apiUrl,
       apiKey: store.systemConfig.apiKey,
+      model: store.systemConfig.model,
       enableWebSearch: store.systemConfig.enableWebSearch
     },
     database: getSystemDatabaseInfo()
@@ -1993,6 +2391,7 @@ export function updateSystemAiConfig(office: OfficeAccount, input: UpdateSystemA
   store.systemConfig = {
     apiUrl: input.apiUrl.trim(),
     apiKey: input.apiKey.trim(),
+    model: input.model.trim(),
     enableWebSearch: input.enableWebSearch
   };
   saveSystemStore(store);
