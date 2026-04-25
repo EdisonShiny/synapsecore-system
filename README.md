@@ -1,87 +1,239 @@
 # synapsecore-system
 
-AI-Powered Agentic Workflow Automation for HQ and Branch Coordination
+SynapseCore System is a Next.js application for HQ and Branch Office coordination through AI-assisted workflows, requests, approvals, project phases, planning insight, and structured demo data.
 
-## SynapseCore System Design System
+## Overview
 
-React/Next.js + TypeScript + Tailwind foundation for the SynapseCore System frontend.
+The current app is no longer just a frontend design system. It is a working mock-first workflow platform with:
 
-## Use
+- role-based login for `HQ` and `Branch Office`
+- workflow creation and workflow execution
+- AI-assisted project generation with validation and retry handling
+- request submission, rejection, and reapply flows
+- HQ approval decisions for requests and workflow-created projects
+- project phase progression and phase report generation
+- planning and validation insight
+- database browsing and editing
+- office settings and live AI configuration
 
-Import reusable pieces from the component barrel:
+The default runtime is demo-friendly and works in `mock` mode without external AI credentials.
 
-```tsx
-import { AppShell, KpiCard, DataTableShell, PrimaryButton } from "@/components";
-```
+## Demo Accounts
 
-Page templates live in:
+Built-in demo sign-in options:
 
-```tsx
-import { DashboardTemplate, ProjectListTemplate } from "@/features/page-templates";
-```
+- `hq@synapsecore.test`
+- `branch@synapsecore.test`
 
-## Structure
+Allowed roles are only:
 
-- `tailwind.config.ts`: exact SynapseCore System theme colors, typography, spacing, radius, and shadow extensions.
-- `lib/theme.ts`: token reference for teammates who need colors or conventions outside Tailwind classes.
-- `types/synapse.ts`: shared entity, role, status, approval, confidence, and phase types.
-- `src/modules/ai`: disconnected AI logic module with prompts, schemas, validation helpers, pipeline metadata, examples, and mock fallback responses.
-- `components/layout`: `AppSidebar`, `TopHeader`, `PageContainer`, `SectionBlock`, `DetailDrawer`, `AppShell`.
-- `components/ui`: buttons, badges, table shell, filters, fields, upload, alerts, modal, tabs, progress, confidence meter.
-- `components/domain`: KPI, chart, ai_analysis, validation, approval, branch, activity, timeline, report patterns.
-- `components/states`: `EmptyState`, `LoadingState`, `ErrorState`.
-- `features/page-templates.tsx`: sample structures for Login, Dashboard, project list, create project, project detail, AI plan, validation center, approvals, reports, and settings.
+- `HQ`
+- `Branch Office`
 
-## AI Logic Module
+## Tech Stack
 
-The AI reasoning layer in `src/modules/ai` is now wired into the backend AI endpoints with strict prompt, schema, validation, and retry handling. The runtime stays deterministic in mock mode until a real Z.AI configuration is provided.
+- Next.js 15
+- React 18
+- TypeScript
+- Tailwind CSS
 
-Key files:
+## Getting Started
 
-- `src/modules/ai/prompts.ts`: strict system prompts and user prompt templates for each AI module.
-- `src/modules/ai/schemas.ts`: JSON-schema-style output contracts for strict AI responses.
-- `src/modules/ai/validation.ts`: strict JSON validation, confidence handling, human-review gating, and retry strategy.
-- `src/services/ai-engine.ts`: AI execution runtime, deterministic fallback generation, and entity mapping.
-- `src/modules/ai/pipeline.ts`: module-to-endpoint pipeline metadata.
-- `src/modules/ai/examples.ts`: example request and response pairs for the demo flow.
-- `docs/ai-logic-integration.md`: integration guide for backend, frontend, and demo-mode editors.
-
-When integrating the real provider later, configure the Z.AI environment variables and keep frontend components consuming validated `/ai/*` endpoint responses instead of importing prompt text directly.
-
-## Runtime Modes
-
-- `SYNAPSECORE_MODE=mock`: deterministic demo mode with no external AI dependency.
-- `SYNAPSECORE_MODE=real`: enables the real AI request path.
-- `ZAI_API_URL`: OpenAI-compatible chat/completions endpoint to call in real mode.
-- `ZAI_API_KEY`: provider key for the Z.AI runtime.
-- `ZAI_MODEL`: model id used for the request.
-- `DATABASE_URL`: optional future real database connection string.
-
-If any required AI runtime variable is missing, the app falls back to mock AI automatically.
-
-## App Routes
-
-- `/login`
-- `/dashboard`
-- `/projects`
-- `/projects/create`
-- `/projects/[id]`
-- `/ai-workflow`
-- `/validation-center`
-- `/approvals`
-- `/reports`
-- `/settings`
-
-## Shared Contract
-
-Use these entity names exactly in data models and labels: `project`, `phase`, `plan`, `validation`, `approval`, `execution_update`, `ai_analysis`, `branch`, `HQ`.
-
-Allowed roles are only `HQ` and `Branch Office`.
-
-## Commands
+Install dependencies:
 
 ```bash
 npm install
+```
+
+Start the app locally:
+
+```bash
 npm run dev
+```
+
+Open:
+
+```text
+http://localhost:3000/login
+```
+
+Useful checks:
+
+```bash
+npm run build
+npm run lint
 npm run typecheck
 ```
+
+## Runtime Configuration
+
+Default `.env.example`:
+
+```env
+SYNAPSECORE_MODE=mock
+ILMU_API_BASE_URL=
+ILMU_API_KEY=
+ILMU_MODEL=
+ZAI_API_URL=
+ZAI_API_KEY=
+ZAI_MODEL=
+DATABASE_URL=
+```
+
+### Runtime Modes
+
+- `SYNAPSECORE_MODE=mock`
+  - uses deterministic demo behavior
+  - does not require external AI configuration
+
+- `SYNAPSECORE_MODE=real`
+  - enables live AI and database paths when configured
+
+### Live AI Configuration
+
+The main runtime config uses:
+
+- `ZAI_API_URL`
+- `ZAI_API_KEY`
+- `ZAI_MODEL`
+
+If required AI values are missing, the app falls back to mock AI automatically.
+
+`DATABASE_URL` is optional. If it is missing, the system keeps using the mock database path.
+
+## Main App Routes
+
+Core routes:
+
+- `/login`
+- `/projects`
+- `/projects/pending`
+- `/projects/archived`
+- `/projects/[id]`
+- `/workflows`
+- `/workflows/[id]`
+- `/requests`
+- `/plan-validate`
+- `/database`
+- `/settings`
+
+Supporting routes currently redirect:
+
+- `/dashboard` -> `/projects`
+- `/application` -> `/workflows`
+- `/approvals` -> `/application`
+- `/reports` -> `/issues`
+- `/issues` -> `/requests`
+
+Also present:
+
+- `/ai-workflow`
+- `/validation-center`
+
+## Main Functional Areas
+
+### Authentication
+
+- Sign in with office email and role
+- Create office accounts
+- Persist demo session in local storage
+
+### Workflows
+
+- Create reusable workflows from prompt presets
+- Edit workflow configuration
+- Run workflows with text, attachments, checked links, and selected database context
+- Review workflow run history and created projects
+
+### Projects
+
+- View active, pending, and archived projects
+- Open project details
+- Review project phase history
+- Submit outcome input to progress approved projects
+- Generate phase report PDF
+
+### Requests and Approvals
+
+- Branch Office can submit requests
+- Rejected requests can be reapplied
+- HQ can approve or reject request applications
+- HQ can separately approve or reject workflow-created projects
+
+### Plan and Validate
+
+- Submit planning notes and supporting files
+- Review branch-level and overall planning insight
+- Inspect AI transparency output
+
+### Database
+
+- Browse structured company data
+- Edit supported fields
+- Add and update custom entries
+
+### Settings
+
+- Update office profile details
+- Configure live AI endpoint, key, model, and web search option
+- Clear workflow data with confirmation
+
+## Project Structure
+
+- `app/`: Next.js App Router pages and API route handlers
+- `components/`: shared UI, layout, domain cards, and app pages
+- `src/modules/system/`: main workflow, project, request, approval, and settings logic
+- `src/modules/ai/`: prompt, schema, validation, and AI module contracts
+- `src/services/`: AI runtime, store, and supporting services
+- `types/`: shared application contracts
+- `data/`: local system data
+- `docs/`: architecture and integration notes
+
+## Important Files
+
+- `src/modules/system/service.ts`
+  - core system logic for workflows, projects, requests, approvals, and phase progression
+
+- `src/modules/ai/prompts.ts`
+  - AI system prompts and user prompt templates
+
+- `src/modules/ai/schemas.ts`
+  - strict output schemas for AI modules
+
+- `src/modules/ai/validation.ts`
+  - strict validation, confidence handling, and retry strategy
+
+- `src/services/ai-engine.ts`
+  - AI runtime and deterministic mock fallback behavior
+
+- `components/system/`
+  - main route-level UI for login, projects, workflows, requests, settings, and database
+
+- `docs/backend-architecture.md`
+  - backend route and flow overview
+
+- `docs/ai-logic-integration.md`
+  - AI integration notes and mock/live behavior
+
+## API Surface
+
+The app includes route handlers under `app/api` for:
+
+- auth
+- workflows
+- projects
+- requests
+- phases
+- reports
+- dashboard
+- settings
+- database
+- AI workflow actions
+
+See [docs/backend-architecture.md](docs/backend-architecture.md) for the route map and workflow flows.
+
+## Notes
+
+- This repository currently does not include a root CI workflow.
+- The project is best tested manually through the browser plus `build` and `lint` checks.
+- Mock mode is the safest default for demos and documentation.
