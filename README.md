@@ -4,7 +4,8 @@
 - PROJECT NAME: Synapsecore System
 
 # All submissions
-[Testing Analysis Documentation (QATD)_SynapseCore System.pdf](Testing Analysis Documentation (QATD)_SynapseCore System.pdf)
+## Documentation
+[Testing Analysis Documentation (QATD)](QATD_SynapseCore_System.pdf)
 
 # synapsecore-system
 
