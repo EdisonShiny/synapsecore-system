@@ -106,7 +106,7 @@ export function DatabaseContextSelector({
   }
 
   return (
-    <div className="grid gap-3 rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+    <div className="grid gap-3 rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-card-title text-synapse-text">{title}</p>
@@ -146,7 +146,7 @@ export function DatabaseContextSelector({
       </div>
 
       {currentNode ? (
-        <div className="rounded-[20px] border border-synapse-border bg-white p-4">
+        <div className="rounded-2xl border border-synapse-border bg-white p-4">
           <label className="flex items-start gap-3">
             <input
               type="checkbox"
@@ -166,7 +166,7 @@ export function DatabaseContextSelector({
       {childNodes.length > 0 ? (
         <div className="grid gap-3 md:grid-cols-2">
           {childNodes.map((node) => (
-            <div key={node.path} className="rounded-[20px] border border-synapse-border bg-white p-4">
+            <div key={node.path} className="rounded-2xl border border-synapse-border bg-white p-4">
               <div className="flex items-start justify-between gap-3">
                 <label className="flex min-w-0 items-start gap-3">
                   <input
@@ -196,7 +196,7 @@ export function DatabaseContextSelector({
           ))}
         </div>
       ) : (
-        <div className="rounded-[20px] border border-dashed border-synapse-border bg-white p-5 text-body text-synapse-muted">
+        <div className="rounded-2xl border border-dashed border-synapse-border bg-white p-5 text-body text-synapse-muted">
           No child branches in this layer. Selecting the current layer will include its fields.
         </div>
       )}

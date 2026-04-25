@@ -537,7 +537,7 @@ function RecordGroup({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-[22px] border border-synapse-border bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-synapse-border bg-white p-4 shadow-sm">
       <p className="text-card-title text-synapse-text">{title}</p>
       <div className="mt-3 grid gap-3">{children}</div>
     </div>
@@ -595,7 +595,7 @@ function BranchCard({
   }
 
   return (
-    <div className="rounded-[22px] border border-synapse-border bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-synapse-border bg-white p-4 shadow-sm">
       {editMode ? (
         <div className="grid gap-3">
           {node.isCustom ? (
@@ -720,7 +720,7 @@ function FieldCard({
   }
 
   return (
-    <div className="rounded-[22px] border border-synapse-border bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-synapse-border bg-white p-4 shadow-sm">
       {editMode ? (
         <div className="grid gap-3">
           {field.isCustom ? (

@@ -229,7 +229,7 @@ export function PromptGuideToggle({ variant }: { variant: PromptGuideVariant }) 
             {promptWritingPrinciples.map((principle) => (
               <div
                 key={principle.title}
-                className="rounded-[18px] border border-synapse-border bg-white px-4 py-3"
+                className="rounded-xl border border-synapse-border bg-white px-4 py-3"
               >
                 <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">
                   {principle.title}
@@ -249,7 +249,7 @@ export function PromptGuideToggle({ variant }: { variant: PromptGuideVariant }) 
             {flows.map((flow) => (
               <div
                 key={flow.title}
-                className="grid gap-2 rounded-[18px] border border-synapse-border bg-white p-4 md:grid-cols-[14rem_minmax(0,1fr)] md:items-start"
+                className="grid gap-2 rounded-xl border border-synapse-border bg-white p-4 md:grid-cols-[14rem_minmax(0,1fr)] md:items-start"
               >
                 <div>
                   <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">
@@ -278,7 +278,7 @@ export function PromptGuideToggle({ variant }: { variant: PromptGuideVariant }) 
               return (
                 <div
                   key={prompt.id}
-                  className="rounded-[18px] border border-synapse-border bg-white p-4"
+                  className="rounded-xl border border-synapse-border bg-white p-4"
                 >
                   <div className="flex items-start gap-3">
                     <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-blue-200 bg-blue-50 text-body font-semibold text-synapse-primary">

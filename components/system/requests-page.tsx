@@ -460,7 +460,7 @@ export function RequestsPage() {
         >
           <form className="grid gap-4" onSubmit={handleSaveConfig}>
             <PromptGuideToggle variant="request" />
-            <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+            <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
               <p className="text-card-title text-synapse-text">{selectedPreset.title}</p>
               <p className="mt-2 text-body text-synapse-muted">{selectedPreset.summary}</p>
               <p className="mt-3 text-body text-synapse-text">
@@ -568,7 +568,7 @@ export function RequestsPage() {
                   key={request.id}
                   type="button"
                   onClick={() => setSelectedRequestId(request.id)}
-                  className={`synapse-focus rounded-[22px] border p-4 text-left shadow-sm transition ${
+                  className={`synapse-focus rounded-2xl border p-4 text-left shadow-sm transition ${
                     request.id === selectedRequest?.id
                       ? "border-blue-200 bg-blue-50"
                       : "border-synapse-border bg-synapse-elevated hover:border-blue-200 hover:bg-white"
@@ -603,7 +603,7 @@ export function RequestsPage() {
         >
           {selectedRequest ? (
             <div className="grid gap-4">
-              <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+              <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div>
                     <p className="text-card-title text-synapse-text">{selectedRequest.projectSubject}</p>
@@ -636,7 +636,7 @@ export function RequestsPage() {
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+                <div className="rounded-2xl border border-synapse-border bg-white p-4">
                   <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Supporting files</p>
                   {selectedRequest.attachments.length > 0 ? (
                     <div className="mt-3 grid gap-2">
@@ -650,7 +650,7 @@ export function RequestsPage() {
                     <p className="mt-3 text-body text-synapse-muted">No support files were attached.</p>
                   )}
                 </div>
-                <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+                <div className="rounded-2xl border border-synapse-border bg-white p-4">
                   <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Structured data context</p>
                   {selectedRequest.selectedDatabaseSummaries.length > 0 ? (
                     <div className="mt-3 grid gap-2">
@@ -668,12 +668,12 @@ export function RequestsPage() {
                 </div>
               </div>
 
-              <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+              <div className="rounded-2xl border border-synapse-border bg-white p-4">
                 <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Request report</p>
                 <p className="mt-3 text-body text-synapse-text">{selectedRequest.finalReport}</p>
               </div>
 
-              <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+              <div className="rounded-2xl border border-synapse-border bg-white p-4">
                 <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">
                   Extracted information
                 </p>
@@ -704,7 +704,7 @@ export function RequestsPage() {
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+                <div className="rounded-2xl border border-synapse-border bg-white p-4">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Validation</p>
                     {selectedRequest.validation ? (
@@ -727,7 +727,7 @@ export function RequestsPage() {
                     </p>
                   )}
                 </div>
-                <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+                <div className="rounded-2xl border border-synapse-border bg-white p-4">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">
                       AI recommendation
@@ -762,7 +762,7 @@ export function RequestsPage() {
                 </div>
               </div>
 
-              <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+              <div className="rounded-2xl border border-synapse-border bg-white p-4">
                 <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">AI attempts</p>
                 {selectedRequest.attempts.length > 0 ? (
                   <div className="mt-3 grid gap-3">
@@ -795,7 +795,7 @@ export function RequestsPage() {
               </div>
 
               {isHq && selectedRequest.status === "Waiting for Approval" ? (
-                <form className="grid gap-4 rounded-[22px] border border-synapse-border bg-white p-4" onSubmit={handleDecision}>
+                <form className="grid gap-4 rounded-2xl border border-synapse-border bg-white p-4" onSubmit={handleDecision}>
                   <SelectField
                     label="HQ decision"
                     value={decision}
@@ -817,7 +817,7 @@ export function RequestsPage() {
               ) : null}
 
               {!isHq && selectedRequest.status === "Rejected" ? (
-                <form className="grid gap-4 rounded-[22px] border border-synapse-border bg-white p-4" onSubmit={handleReapply}>
+                <form className="grid gap-4 rounded-2xl border border-synapse-border bg-white p-4" onSubmit={handleReapply}>
                   <div>
                     <p className="text-card-title text-synapse-text">Reapply rejected request</p>
                     <p className="mt-1 text-body text-synapse-muted">
@@ -857,7 +857,7 @@ export function RequestsPage() {
               ) : null}
 
               {selectedRequest.decision ? (
-                <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+                <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
                   <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Final decision</p>
                   <p className="mt-3 text-body font-medium text-synapse-text">
                     {selectedRequest.decision.decision}
@@ -905,7 +905,7 @@ export function RequestsPage() {
                   key={project.id}
                   type="button"
                   onClick={() => setSelectedProjectApprovalId(project.id)}
-                  className={`synapse-focus rounded-[22px] border p-4 text-left shadow-sm transition ${
+                  className={`synapse-focus rounded-2xl border p-4 text-left shadow-sm transition ${
                     project.id === selectedProjectApproval?.id
                       ? "border-blue-200 bg-blue-50"
                       : "border-synapse-border bg-synapse-elevated hover:border-blue-200 hover:bg-white"
@@ -943,7 +943,7 @@ export function RequestsPage() {
         >
           {selectedProjectApproval ? (
             <div className="grid gap-4">
-              <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+              <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div>
                     <p className="text-card-title text-synapse-text">{selectedProjectApproval.subject}</p>
@@ -978,7 +978,7 @@ export function RequestsPage() {
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+                <div className="rounded-2xl border border-synapse-border bg-white p-4">
                   <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">
                     Current phase
                   </p>
@@ -1003,7 +1003,7 @@ export function RequestsPage() {
                     </p>
                   )}
                 </div>
-                <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+                <div className="rounded-2xl border border-synapse-border bg-white p-4">
                   <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">
                     Project report summary
                   </p>
@@ -1016,7 +1016,7 @@ export function RequestsPage() {
                 </div>
               </div>
 
-              <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+              <div className="rounded-2xl border border-synapse-border bg-white p-4">
                 <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">
                   Project approval history
                 </p>
@@ -1045,7 +1045,7 @@ export function RequestsPage() {
               (selectedProjectApproval.status === "Submitted" ||
                 selectedProjectApproval.status === "Waiting for Approval") ? (
                 <form
-                  className="grid gap-4 rounded-[22px] border border-synapse-border bg-white p-4"
+                  className="grid gap-4 rounded-2xl border border-synapse-border bg-white p-4"
                   onSubmit={handleProjectDecision}
                 >
                   <SelectField
@@ -1071,7 +1071,7 @@ export function RequestsPage() {
               ) : null}
 
               {selectedProjectApproval.decision ? (
-                <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+                <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
                   <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">
                     Latest project decision
                   </p>

@@ -110,7 +110,7 @@ export function DetailDrawer({
   }
 
   return (
-    <aside className="hidden rounded-[24px] border border-synapse-border bg-white/90 p-5 shadow-panel xl:block">
+    <aside className="hidden rounded-2xl border border-synapse-border bg-synapse-card p-5 shadow-sm xl:block">
       <h2 className="mb-4 text-section-title text-synapse-text">{title}</h2>
       {children}
     </aside>
@@ -305,19 +305,19 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
 
   function renderAiStatus() {
     const toneStyles: Record<Exclude<SystemAiHealthStatus, "checking">, string> = {
-      "live-ready": "border-emerald-200 bg-emerald-50 text-emerald-800",
-      "fallback-active": "border-amber-200 bg-amber-50 text-amber-800",
-      "missing-config": "border-slate-200 bg-slate-100 text-slate-700"
+      "live-ready": "border-emerald-200 bg-emerald-50 text-emerald-700",
+      "fallback-active": "border-amber-200 bg-amber-50 text-amber-700",
+      "missing-config": "border-synapse-border bg-synapse-elevated text-synapse-muted"
     };
 
     if (aiHealth.status === "checking") {
       return (
-        <div className="pointer-events-none select-none rounded-[24px] border border-blue-200 bg-blue-50 p-4 text-blue-800 shadow-sm">
+        <div className="pointer-events-none select-none rounded-2xl border border-blue-200 bg-blue-50 p-4 text-blue-700 shadow-sm">
           <div className="flex items-start gap-3">
             <Loader2 className="mt-0.5 h-4 w-4 animate-spin shrink-0" />
             <div>
               <p className="text-card-title">Checking AI status</p>
-              <p className="mt-1 text-body text-blue-700">
+              <p className="mt-1 text-body text-blue-700/85">
                 Running a startup probe against the configured provider.
               </p>
             </div>
@@ -331,7 +331,7 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
     return (
       <div
         className={cn(
-          "pointer-events-none select-none rounded-[24px] border p-4 shadow-sm",
+          "pointer-events-none select-none rounded-2xl border p-4 shadow-sm",
           toneStyles[aiHealth.status]
         )}
       >
@@ -363,9 +363,9 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
   function sidebarContent() {
     return (
       <>
-        <div className="rounded-[26px] border border-white/50 bg-white/75 p-4 shadow-sm">
+        <div className="rounded-2xl border border-synapse-border bg-synapse-card p-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="grid h-12 w-12 place-items-center overflow-hidden rounded-[18px] border border-white/70 bg-slate-950 shadow-sm">
+            <div className="grid h-12 w-12 place-items-center overflow-hidden rounded-xl border border-synapse-border bg-white shadow-sm">
               <Image
                 src="/synapsecore-logo.png"
                 alt="SynapseCore logo"
@@ -387,10 +387,10 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
               href={href}
               onClick={() => setMobileOpen(false)}
               className={cn(
-                "synapse-focus flex min-h-12 items-center gap-3 rounded-2xl border px-4 text-body transition",
+                "synapse-focus flex min-h-12 items-center gap-3 rounded-xl border px-4 text-body transition",
                 isSelected(href)
-                  ? "border-blue-200 bg-blue-50 text-synapse-primary shadow-sm"
-                  : "border-transparent text-synapse-muted hover:border-synapse-border hover:bg-white hover:text-synapse-text"
+                  ? "relative border-blue-100 bg-blue-50 text-blue-700 shadow-sm before:absolute before:left-0 before:top-2 before:h-8 before:w-1 before:rounded-r-full before:bg-synapse-primary"
+                  : "border-transparent text-synapse-muted hover:border-slate-200 hover:bg-synapse-elevated hover:text-synapse-text"
               )}
             >
               <Icon className="h-5 w-5 shrink-0" />
@@ -404,10 +404,10 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
             href="/settings"
             onClick={() => setMobileOpen(false)}
             className={cn(
-              "synapse-focus flex min-h-12 items-center gap-3 rounded-2xl border px-4 text-body transition",
+              "synapse-focus flex min-h-12 items-center gap-3 rounded-xl border px-4 text-body transition",
               isSelected("/settings")
-                ? "border-blue-200 bg-blue-50 text-synapse-primary shadow-sm"
-                : "border-transparent bg-white/80 text-synapse-muted hover:border-synapse-border hover:bg-white hover:text-synapse-text"
+                ? "relative border-blue-100 bg-blue-50 text-blue-700 shadow-sm before:absolute before:left-0 before:top-2 before:h-8 before:w-1 before:rounded-r-full before:bg-synapse-primary"
+                : "border-synapse-border bg-synapse-card text-synapse-muted shadow-sm hover:border-slate-300 hover:bg-synapse-elevated hover:text-synapse-text"
             )}
           >
             <Settings className="h-5 w-5 shrink-0" />
@@ -416,7 +416,7 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
               <p className="text-meta text-synapse-muted">User profile and AI API config</p>
             </div>
           </Link>
-          <div className="rounded-[24px] border border-white/50 bg-white/80 p-4 shadow-sm">
+          <div className="rounded-2xl border border-synapse-border bg-synapse-card p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-card-title text-synapse-text">{session.user.personInChargeName}</p>
@@ -438,15 +438,15 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
 
   return (
     <div className="min-h-screen bg-synapse-page text-synapse-text">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 flex-col gap-4 overflow-hidden border-r border-white/40 bg-white/55 p-4 backdrop-blur-xl lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 flex-col gap-4 overflow-hidden border-r border-synapse-border bg-white p-4 lg:flex">
         {sidebarContent()}
       </aside>
       {mobileOpen ? (
-        <div className="fixed inset-0 z-50 bg-slate-950/30 backdrop-blur-sm lg:hidden">
-          <div className="flex h-full w-[86%] max-w-sm flex-col gap-4 bg-synapse-page p-4 shadow-soft">
+        <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-sm lg:hidden">
+          <div className="flex h-full w-[86%] max-w-sm flex-col gap-4 border-r border-synapse-border bg-white p-4 shadow-soft">
             <button
               type="button"
-              className="synapse-focus ml-auto rounded-2xl border border-synapse-border bg-white p-2"
+              className="synapse-focus ml-auto rounded-xl border border-synapse-border bg-white p-2 shadow-sm"
               onClick={() => setMobileOpen(false)}
               aria-label="Close navigation"
             >
@@ -457,11 +457,11 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
         </div>
       ) : null}
       <div className="lg:pl-72">
-        <header className="sticky top-0 z-30 border-b border-white/50 bg-white/70 px-4 py-4 backdrop-blur-xl md:px-6 xl:px-8">
+        <header className="sticky top-0 z-30 border-b border-synapse-border bg-white px-4 py-4 md:px-6 xl:px-8">
           <div className="mx-auto flex w-full max-w-7xl items-start gap-4">
             <button
               type="button"
-              className="synapse-focus rounded-2xl border border-synapse-border bg-white p-2 text-synapse-muted lg:hidden"
+              className="synapse-focus rounded-xl border border-synapse-border bg-white p-2 text-synapse-muted shadow-sm lg:hidden"
               onClick={() => setMobileOpen(true)}
               aria-label="Open navigation"
             >
@@ -475,7 +475,7 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
             </div>
             <div className="hidden items-center gap-3 md:flex">
               <RoleBadge role={session.user.role} />
-              <div className="grid h-11 w-11 place-items-center rounded-full border border-synapse-border bg-white text-body font-semibold shadow-sm">
+              <div className="grid h-11 w-11 place-items-center rounded-full border border-synapse-border bg-white text-body font-semibold text-synapse-text shadow-sm">
                 {initials}
               </div>
             </div>
@@ -494,7 +494,7 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
             </div>
             {pageSections.length > 1 ? (
               <aside className="hidden xl:block xl:w-[17rem]">
-                <div className="fixed right-6 top-28 z-20 w-[17rem] rounded-[22px] border border-white/60 bg-white/82 p-5 shadow-panel backdrop-blur 2xl:right-10">
+                <div className="fixed right-6 top-28 z-20 w-[17rem] rounded-2xl border border-synapse-border bg-white p-5 shadow-panel 2xl:right-10">
                   <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">
                     Page navigation
                   </p>
@@ -515,10 +515,10 @@ export function AppShell(props: CurrentShellProps | LegacyShellProps) {
                               aria-current={isActive ? "location" : undefined}
                               onClick={() => scrollToSection(section.id)}
                               className={cn(
-                                "synapse-focus relative -ml-5 flex w-full items-start gap-3 rounded-2xl py-2 pl-5 pr-2 text-left transition",
+                                "synapse-focus relative -ml-5 flex w-full items-start gap-3 rounded-xl py-2 pl-5 pr-2 text-left transition",
                                 isActive
-                                  ? "text-synapse-primary"
-                                  : "text-synapse-muted hover:text-synapse-text"
+                                  ? "bg-blue-50 text-blue-700"
+                                  : "text-synapse-muted hover:bg-synapse-elevated hover:text-synapse-text"
                               )}
                             >
                               <span

@@ -276,7 +276,7 @@ export function WorkflowDetailPage({ workflowId }: { workflowId: string }) {
             >
               <form className="grid gap-4" onSubmit={handleSaveConfig}>
                 <PromptGuideToggle variant="workflow" />
-                <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+                <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
                   <p className="text-card-title text-synapse-text">{selectedPreset.title}</p>
                   <p className="mt-2 text-body text-synapse-muted">{selectedPreset.summary}</p>
                   <p className="mt-3 text-body text-synapse-text">
@@ -486,7 +486,7 @@ export function WorkflowDetailPage({ workflowId }: { workflowId: string }) {
               </form>
 
               {latestRun ? (
-                <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+                <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
                       <p className="text-card-title text-synapse-text">Latest run</p>
@@ -506,7 +506,7 @@ export function WorkflowDetailPage({ workflowId }: { workflowId: string }) {
               emptyTitle="No runs yet"
               emptyDescription="Run the workflow once and the execution history will appear here."
               renderItem={(run) => (
-                <div key={run.id} className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-5">
+                <div key={run.id} className="rounded-2xl border border-synapse-border bg-synapse-elevated p-5">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
                       <p className="text-card-title text-synapse-text">{run.workflowName}</p>
@@ -516,11 +516,11 @@ export function WorkflowDetailPage({ workflowId }: { workflowId: string }) {
                     </div>
                     <WorkflowRunStatusBadge status={run.status} />
                   </div>
-                  <p className="mt-3 rounded-[18px] border border-synapse-border bg-white p-3 text-body text-synapse-text">
+                  <p className="mt-3 rounded-xl border border-synapse-border bg-white p-3 text-body text-synapse-text">
                     {run.unstructuredInput}
                   </p>
                   {(run.attachments.length > 0 || run.attachedDatabasePaths.length > 0 || run.webSearchEnabled) ? (
-                    <div className="mt-4 rounded-[18px] border border-synapse-border bg-white p-4">
+                    <div className="mt-4 rounded-xl border border-synapse-border bg-white p-4">
                       <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Attached context</p>
                       {run.attachments.length > 0 ? (
                         <div className="mt-3 grid gap-2 text-body text-synapse-text">
@@ -543,7 +543,7 @@ export function WorkflowDetailPage({ workflowId }: { workflowId: string }) {
                   ) : null}
                   <div className="mt-4 grid gap-3">
                     {run.attempts.map((attempt) => (
-                      <div key={attempt.id} className="rounded-[18px] border border-synapse-border bg-white p-4">
+                      <div key={attempt.id} className="rounded-xl border border-synapse-border bg-white p-4">
                         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                           <div>
                             <p className="text-card-title text-synapse-text">Attempt {attempt.attemptNumber}</p>
@@ -580,7 +580,7 @@ export function WorkflowDetailPage({ workflowId }: { workflowId: string }) {
               renderItem={(project) => (
                 <div
                   key={project.id}
-                  className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4 text-left shadow-sm transition hover:border-blue-200 hover:bg-white"
+                  className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4 text-left shadow-sm transition hover:border-blue-200 hover:bg-white"
                 >
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>

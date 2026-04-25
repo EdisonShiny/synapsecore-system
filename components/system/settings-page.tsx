@@ -264,7 +264,7 @@ export function SettingsPage() {
                 Enable web search tool for AI calls
               </label>
               {databaseInfo ? (
-                <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4 text-body text-synapse-muted">
+                <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4 text-body text-synapse-muted">
                   <p className="font-semibold text-synapse-text">Current persistent database</p>
                   <p className="mt-2">Engine: {databaseInfo.engine}</p>
                   <p className="mt-1 break-all">Path: {databaseInfo.path}</p>
@@ -286,7 +286,7 @@ export function SettingsPage() {
             : "Clear branch-owned projects, insights, and issue threads while keeping the branch account."
         }
       >
-        <div className="rounded-[22px] border border-red-200 bg-red-50 p-4">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
           <p className="text-card-title text-red-800">{session.user.role === "HQ" ? "Clear system workflow data" : "Clear branch workflow data"}</p>
           <p className="mt-2 text-body text-red-700">
             This action removes active workflow records and should only be used when the office explicitly wants a clean operating slate.

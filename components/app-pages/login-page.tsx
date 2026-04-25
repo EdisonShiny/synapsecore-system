@@ -43,7 +43,7 @@ export function LoginPageClient() {
   return (
     <div className="grid min-h-screen place-items-center bg-synapse-page p-4">
       <div className="grid w-full max-w-5xl gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-        <section className="rounded-[28px] border border-synapse-border bg-white/80 p-8 shadow-soft backdrop-blur md:p-10">
+        <section className="rounded-2xl border border-synapse-border bg-white p-8 shadow-panel md:p-10">
           <div className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-meta font-semibold uppercase tracking-[0.08em] text-synapse-primary">
             AI workflow automation
           </div>
@@ -68,7 +68,7 @@ export function LoginPageClient() {
           </div>
         </section>
         <form
-          className="grid gap-5 rounded-[28px] border border-synapse-border bg-synapse-card p-8 shadow-soft"
+          className="grid gap-5 rounded-2xl border border-synapse-border bg-synapse-card p-8 shadow-panel"
           onSubmit={handleSubmit}
         >
           <div>

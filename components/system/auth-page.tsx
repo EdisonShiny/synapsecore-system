@@ -129,11 +129,11 @@ export function AuthPage() {
 
   return (
     <div className="grid min-h-screen place-items-center bg-synapse-page p-4">
-      <div className="w-full max-w-2xl rounded-[32px] border border-white/70 bg-white/85 p-6 shadow-soft backdrop-blur-xl md:p-8">
+      <div className="w-full max-w-2xl rounded-2xl border border-synapse-border bg-white p-6 shadow-panel md:p-8">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <div className="mb-4 flex items-center gap-3">
-              <div className="grid h-14 w-14 place-items-center overflow-hidden rounded-[20px] border border-white/70 bg-slate-950 shadow-sm">
+              <div className="grid h-14 w-14 place-items-center overflow-hidden rounded-xl border border-synapse-border bg-white shadow-sm">
                 <Image
                   src="/synapsecore-logo.png"
                   alt="SynapseCore logo"
@@ -154,7 +154,7 @@ export function AuthPage() {
             </p>
           </div>
           {authStatus ? (
-            <div className="rounded-[20px] border border-synapse-border bg-synapse-elevated px-4 py-3 text-body text-synapse-muted">
+            <div className="rounded-2xl border border-synapse-border bg-synapse-elevated px-4 py-3 text-body text-synapse-muted">
               <div>{authStatus.accountCount} registered account{authStatus.accountCount === 1 ? "" : "s"}</div>
               <div>{authStatus.hqExists ? "HQ account already exists" : "HQ account not registered yet"}</div>
             </div>
@@ -209,7 +209,7 @@ export function AuthPage() {
               </form>
 
               {presetAccounts.length > 0 ? (
-                <div className="grid gap-3 rounded-[22px] border border-synapse-border bg-synapse-elevated/70 p-4">
+                <div className="grid gap-3 rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
                   <div>
                     <p className="text-card-title text-synapse-text">Preset testing accounts</p>
                     <p className="mt-1 text-body text-synapse-muted">

@@ -359,7 +359,7 @@ export function ApplicationPage() {
     return (
       <div
         key={project.id}
-        className={`synapse-focus rounded-[22px] border p-4 text-left shadow-sm transition ${
+        className={`synapse-focus rounded-2xl border p-4 text-left shadow-sm transition ${
           selected
             ? "border-blue-200 bg-blue-50"
             : "border-synapse-border bg-synapse-elevated hover:border-blue-100 hover:bg-white"
@@ -422,7 +422,7 @@ export function ApplicationPage() {
         <WorkflowStageMap stages={stages} />
 
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+          <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
             <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Original unstructured input</p>
             <p className="mt-3 text-body text-synapse-text">{project.description}</p>
             <div className="mt-4 grid gap-2 text-body text-synapse-muted">
@@ -432,7 +432,7 @@ export function ApplicationPage() {
               <p><span className="font-semibold text-synapse-text">Submission time:</span> {formatDateTime(project.createdAt)}</p>
             </div>
           </div>
-          <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+          <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
             <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Structured project report</p>
             <div className="mt-3 grid gap-2 text-body text-synapse-text">
               <p><span className="font-semibold">Branch Office:</span> {project.report.branchOfficeName}</p>
@@ -444,7 +444,7 @@ export function ApplicationPage() {
           </div>
         </div>
 
-        <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+        <div className="rounded-2xl border border-synapse-border bg-white p-4">
           <p className="text-card-title text-synapse-text">Next recommended move</p>
           <p className="mt-2 text-body text-synapse-muted">{getNextMove(project)}</p>
           <div className="mt-4 flex flex-wrap gap-3">
@@ -458,7 +458,7 @@ export function ApplicationPage() {
         </div>
 
         {project.decision ? (
-          <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+          <div className="rounded-2xl border border-synapse-border bg-white p-4">
             <div className="flex items-center justify-between gap-3">
               <p className="text-card-title text-synapse-text">HQ decision</p>
               <WorkflowStatusBadge status={project.decision.decision} />
@@ -470,7 +470,7 @@ export function ApplicationPage() {
           </div>
         ) : null}
 
-        <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+        <div className="rounded-2xl border border-synapse-border bg-white p-4">
           <p className="text-card-title text-synapse-text">Workflow history</p>
           <div className="mt-3 grid gap-3">
             {project.statusHistory.map((entry, index) => (
@@ -665,7 +665,7 @@ export function ApplicationPage() {
           >
             {selectedProject ? (
               <div className="grid gap-4">
-                <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+                <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
                       <p className="text-card-title text-synapse-text">{selectedProject.subject}</p>
@@ -680,12 +680,12 @@ export function ApplicationPage() {
                     </div>
                   </div>
                 </div>
-                <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+                <div className="rounded-2xl border border-synapse-border bg-white p-4">
                   <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">AI project identification</p>
                   <p className="mt-3 text-body font-medium text-synapse-text">{selectedProject.report.aiOutput.directResult}</p>
                   <p className="mt-3 text-body text-synapse-muted">{selectedProject.report.aiOutput.finalConclusion}</p>
                 </div>
-                <div className="grid gap-4 rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+                <div className="grid gap-4 rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
                   <SelectField label="Decision" value={decision} onChange={(event) => setDecision(event.target.value as typeof decision)}>
                     <option value="Approved">Approved</option>
                     <option value="Rejected">Rejected</option>
@@ -730,7 +730,7 @@ export function ApplicationPage() {
           >
             {selectedProject && selectedProject.status === "Rejected" ? (
               <form className="grid gap-4" onSubmit={handleRework}>
-                <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4 text-body text-synapse-text">
+                <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4 text-body text-synapse-text">
                   Rework cycle count: {selectedProject.appealCount}
                 </div>
                 <FormField

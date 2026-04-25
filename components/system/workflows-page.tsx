@@ -184,7 +184,7 @@ export function WorkflowsPage() {
         >
           <form className="grid gap-4" onSubmit={handleCreate}>
             <PromptGuideToggle variant="workflow" />
-            <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+            <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
               <p className="text-card-title text-synapse-text">{selectedPreset.title}</p>
               <p className="mt-2 text-body text-synapse-muted">{selectedPreset.summary}</p>
               <p className="mt-3 text-body text-synapse-text">
@@ -310,7 +310,7 @@ export function WorkflowsPage() {
               renderItem={(workflow) => (
                 <div
                   key={workflow.id}
-                  className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-5 text-left shadow-sm transition hover:border-blue-200 hover:bg-white"
+                  className="rounded-2xl border border-synapse-border bg-synapse-elevated p-5 text-left shadow-sm transition hover:border-blue-200 hover:bg-white"
                 >
                   <p className="text-card-title text-synapse-text">{workflow.name}</p>
                   <p className="mt-2 line-clamp-2 text-body text-synapse-muted">{workflow.description}</p>

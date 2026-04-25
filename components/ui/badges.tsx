@@ -9,7 +9,7 @@ const toneMap: Record<StatusTone, string> = {
   warning: "border-amber-200 bg-amber-50 text-amber-700",
   error: "border-red-200 bg-red-50 text-red-700",
   info: "border-blue-200 bg-blue-50 text-blue-700",
-  neutral: "border-synapse-border bg-slate-50 text-synapse-muted"
+  neutral: "border-synapse-border bg-synapse-elevated text-synapse-muted"
 };
 
 const approvalTone: Record<ApprovalStatus, StatusTone> = {

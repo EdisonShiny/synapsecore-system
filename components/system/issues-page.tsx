@@ -195,7 +195,7 @@ export function IssuesPage() {
                 key={issue.id}
                 type="button"
                 onClick={() => setSelectedIssueId(issue.id)}
-                className={`synapse-focus rounded-[22px] border p-4 text-left shadow-sm transition ${
+                className={`synapse-focus rounded-2xl border p-4 text-left shadow-sm transition ${
                   issue.id === selectedIssueId
                     ? "border-blue-200 bg-blue-50"
                     : "border-synapse-border bg-synapse-elevated hover:border-blue-100 hover:bg-white"
@@ -228,7 +228,7 @@ export function IssuesPage() {
       >
         {selectedIssue ? (
           <div className="grid gap-6">
-            <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+            <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
                   <p className="text-card-title text-synapse-text">{selectedIssue.subject}</p>
@@ -257,7 +257,7 @@ export function IssuesPage() {
 
             <AiTransparencyPanel insight={selectedIssue.aiOutput} title="Issue analysis AI workflow" />
 
-            <form className="grid gap-4 rounded-[22px] border border-synapse-border bg-white p-4" onSubmit={handleReply}>
+            <form className="grid gap-4 rounded-2xl border border-synapse-border bg-white p-4" onSubmit={handleReply}>
               <TextAreaField label="Reply" required value={replyMessage} onChange={(event) => setReplyMessage(event.target.value)} />
               <label className="flex items-center gap-3 text-body text-synapse-text">
                 <input type="checkbox" checked={resolve} onChange={(event) => setResolve(event.target.checked)} />
@@ -280,7 +280,7 @@ export function IssuesPage() {
           <p className="text-body text-synapse-muted">
             Confirm once more before sending this urgent issue to the counterpart office.
           </p>
-          <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4 text-body text-synapse-text">
+          <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4 text-body text-synapse-text">
             <p className="font-semibold">{subject}</p>
             <p className="mt-2">{message}</p>
           </div>

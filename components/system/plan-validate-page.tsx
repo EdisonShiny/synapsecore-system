@@ -170,15 +170,15 @@ export function PlanValidatePage() {
           description="Combined view across all branches and current workflow pressure."
         >
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+            <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
               <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Demand conclusion</p>
               <p className="mt-3 text-body text-synapse-text">{data.overall.demandConclusion}</p>
             </div>
-            <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+            <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
               <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Financial conclusion</p>
               <p className="mt-3 text-body text-synapse-text">{data.overall.financialConclusion}</p>
             </div>
-            <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+            <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
               <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Risk conclusion</p>
               <p className="mt-3 text-body text-synapse-text">{data.overall.riskConclusion}</p>
             </div>
@@ -197,39 +197,39 @@ export function PlanValidatePage() {
           }
         >
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+            <div className="rounded-2xl border border-synapse-border bg-white p-4">
               <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Validator check</p>
               <p className="mt-3 text-body text-synapse-text">Is the gathered information grounded in real evidence?</p>
             </div>
-            <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+            <div className="rounded-2xl border border-synapse-border bg-white p-4">
               <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Impact review</p>
               <p className="mt-3 text-body text-synapse-text">What could happen if the proposed plan is executed?</p>
             </div>
-            <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+            <div className="rounded-2xl border border-synapse-border bg-white p-4">
               <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Risk handling</p>
               <p className="mt-3 text-body text-synapse-text">How can the branch or HQ reduce the identified risk?</p>
             </div>
-            <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+            <div className="rounded-2xl border border-synapse-border bg-white p-4">
               <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Confidence</p>
               <p className="mt-3 text-body text-synapse-text">Use the AI workflow output to judge whether human review is still required.</p>
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+            <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
               <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Demand</p>
               <p className="mt-3 text-body text-synapse-text">{selectedBranchInsight.demandConclusion}</p>
             </div>
-            <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+            <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
               <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Financial</p>
               <p className="mt-3 text-body text-synapse-text">{selectedBranchInsight.financialConclusion}</p>
             </div>
-            <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+            <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
               <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Risk</p>
               <p className="mt-3 text-body text-synapse-text">{selectedBranchInsight.riskConclusion}</p>
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+            <div className="rounded-2xl border border-synapse-border bg-white p-4">
               <p className="text-card-title text-synapse-text">External signals</p>
               <div className="mt-3 grid gap-3">
                 {selectedBranchInsight.externalSignals.map((signal) => (
@@ -239,7 +239,7 @@ export function PlanValidatePage() {
                 ))}
               </div>
             </div>
-            <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+            <div className="rounded-2xl border border-synapse-border bg-white p-4">
               <p className="text-card-title text-synapse-text">Uploaded source classification</p>
               <div className="mt-3 grid gap-3">
                 {selectedBranchInsight.uploadedSources.length > 0 ? (
@@ -272,7 +272,7 @@ export function PlanValidatePage() {
           emptyTitle="No planning submissions"
           emptyDescription="Uploaded branch datasets and documents will appear here after submission."
           renderItem={(submission) => (
-            <div key={submission.id} className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4 shadow-sm">
+            <div key={submission.id} className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4 shadow-sm">
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
                   <p className="text-card-title text-synapse-text">{submission.title}</p>

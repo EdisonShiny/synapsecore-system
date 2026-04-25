@@ -171,7 +171,7 @@ export function ProjectsPage() {
             renderItem={(project) => (
               <div
                 key={project.id}
-                className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-5 text-left shadow-sm transition hover:border-blue-200 hover:bg-white"
+                className="rounded-2xl border border-synapse-border bg-synapse-elevated p-5 text-left shadow-sm transition hover:border-blue-200 hover:bg-white"
               >
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div>

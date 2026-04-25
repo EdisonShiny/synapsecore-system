@@ -22,7 +22,7 @@ function PhaseCard({
 }) {
   return (
     <div
-      className={`rounded-[22px] border p-4 ${
+      className={`rounded-2xl border p-4 ${
         current
           ? "border-blue-200 bg-blue-50"
           : "border-synapse-border bg-synapse-elevated"
@@ -38,7 +38,7 @@ function PhaseCard({
         </div>
       </div>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
-        <div className="rounded-[18px] border border-synapse-border bg-white p-4">
+        <div className="rounded-xl border border-synapse-border bg-white p-4">
           <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Actionable plans</p>
           <div className="mt-3 grid gap-2 text-body text-synapse-text">
             {phase.actionablePlans.length > 0 ? (
@@ -48,7 +48,7 @@ function PhaseCard({
             )}
           </div>
         </div>
-        <div className="rounded-[18px] border border-synapse-border bg-white p-4">
+        <div className="rounded-xl border border-synapse-border bg-white p-4">
           <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Expected outcome / aim</p>
           <p className="mt-3 text-body text-synapse-text">{phase.expectedOutcome || "No expected outcome recorded."}</p>
           {phase.completedAt ? (
@@ -57,7 +57,7 @@ function PhaseCard({
         </div>
       </div>
       {phase.completionInput ? (
-        <div className="mt-4 rounded-[18px] border border-synapse-border bg-white p-4">
+        <div className="mt-4 rounded-xl border border-synapse-border bg-white p-4">
           <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Outcome input</p>
           <p className="mt-3 text-body text-synapse-text">{phase.completionInput}</p>
           {phase.completionAttachments.length > 0 ? (
@@ -318,11 +318,11 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
               <WorkflowStatusBadge status={project.status} />
             </div>
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+              <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
                 <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Project summary</p>
                 <p className="mt-3 text-body text-synapse-text">{project.description}</p>
               </div>
-              <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+              <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
                 <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Applicant</p>
                 <div className="mt-3 grid gap-2 text-body text-synapse-text">
                   <p>{project.applicantName}</p>
@@ -332,7 +332,7 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
               </div>
             </div>
             {project.workflowId && project.phases.length > 0 ? (
-              <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+              <div className="rounded-2xl border border-synapse-border bg-white p-4">
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div>
                     <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Phase report</p>
@@ -370,16 +370,16 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
                 {phaseReportResult ? (
                   <div className="mt-4 grid gap-4">
                     <textarea
-                      className="min-h-56 w-full rounded-[18px] border border-synapse-border bg-synapse-elevated p-4 text-body text-synapse-text shadow-sm"
+                      className="min-h-56 w-full rounded-xl border border-synapse-border bg-synapse-elevated p-4 text-body text-synapse-text shadow-sm"
                       readOnly
                       value={phaseReportResult.report}
                     />
                     <div className="grid gap-3 md:grid-cols-2">
-                      <div className="rounded-[18px] border border-synapse-border bg-synapse-elevated p-4">
+                      <div className="rounded-xl border border-synapse-border bg-synapse-elevated p-4">
                         <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Generated for</p>
                         <p className="mt-2 text-body text-synapse-text">{phaseReportResult.phaseTitle}</p>
                       </div>
-                      <div className="rounded-[18px] border border-synapse-border bg-synapse-elevated p-4">
+                      <div className="rounded-xl border border-synapse-border bg-synapse-elevated p-4">
                         <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Validation</p>
                         <p className="mt-2 text-body text-synapse-text">
                           {phaseReportResult.validation?.summary ?? "No validation summary available."}
@@ -400,7 +400,7 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
               <div className="grid gap-4">
                 <PhaseCard phase={currentPhase} current />
                 {project.status === "Approved" && project.lifecycleState === "Active" ? (
-                  <form className="grid gap-4 rounded-[22px] border border-synapse-border bg-white p-4" onSubmit={handleProgressPhase}>
+                  <form className="grid gap-4 rounded-2xl border border-synapse-border bg-white p-4" onSubmit={handleProgressPhase}>
                     <TextAreaField
                       label="Phase outcome input"
                       required
@@ -430,7 +430,7 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
                     </PrimaryButton>
                   </form>
                 ) : (
-                  <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+                  <div className="rounded-2xl border border-synapse-border bg-white p-4">
                     <p className="text-body text-synapse-muted">
                       {project.status !== "Approved"
                         ? "This project must be approved before phase progression can begin."
@@ -475,7 +475,7 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
           <PageSection title="Approval history" description="This tracks the request state after the workflow built the project.">
             <div className="grid gap-3">
               {project.statusHistory.map((entry, index) => (
-                <div key={`${entry.status}-${index}-${entry.changedAt}`} className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+                <div key={`${entry.status}-${index}-${entry.changedAt}`} className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <WorkflowStatusBadge status={entry.status} />
                     <p className="text-meta text-synapse-muted">{formatDateTime(entry.changedAt)}</p>

@@ -30,7 +30,7 @@ export function PageSection({
       data-page-section={hideFromNavigation ? undefined : "true"}
       data-section-title={navigationTitle ?? title}
       className={cn(
-        "grid gap-4 scroll-mt-28 rounded-[24px] border border-synapse-border/90 bg-white/90 p-5 shadow-panel md:p-6",
+        "grid gap-4 scroll-mt-28 rounded-2xl border border-synapse-border bg-synapse-card p-5 shadow-sm md:p-6",
         className
       )}
     >
@@ -62,7 +62,7 @@ export function StatGrid({
   return (
     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
       {items.map((item) => (
-        <div key={item.label} className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4 shadow-sm">
+        <div key={item.label} className="rounded-2xl border border-synapse-border bg-white p-4 shadow-sm">
           <div className="flex items-center gap-2">
             {item.tone ? <span className={cn("h-2.5 w-2.5 rounded-full", toneStyles[item.tone])} aria-hidden /> : null}
             <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">{item.label}</p>
@@ -95,7 +95,7 @@ export function EmptyBlock({
   description: string;
 }) {
   return (
-    <div className="rounded-[22px] border border-dashed border-synapse-border bg-synapse-elevated/80 p-8 text-center">
+    <div className="rounded-2xl border border-dashed border-synapse-border bg-synapse-elevated p-8 text-center">
       <p className="text-card-title text-synapse-text">{title}</p>
       <p className="mt-2 text-body text-synapse-muted">{description}</p>
     </div>
@@ -104,7 +104,7 @@ export function EmptyBlock({
 
 export function LoadingBlock({ label = "Loading" }: { label?: string }) {
   return (
-    <div className="flex min-h-[220px] items-center justify-center gap-3 rounded-[22px] border border-synapse-border bg-white/90 text-body text-synapse-muted shadow-panel">
+    <div className="flex min-h-[220px] items-center justify-center gap-3 rounded-2xl border border-synapse-border bg-white text-body text-synapse-muted shadow-sm">
       <Loader2 className="h-5 w-5 animate-spin" />
       <span>{label}</span>
     </div>
@@ -128,18 +128,18 @@ export function StatusIcon({ status }: { status: WorkflowStatus }) {
   const className = "h-4 w-4";
 
   if (status === "Approved") {
-    return <CheckCircle2 className={cn(className, "text-emerald-600")} />;
+    return <CheckCircle2 className={cn(className, "text-emerald-400")} />;
   }
 
   if (status === "Rejected") {
-    return <FileWarning className={cn(className, "text-red-600")} />;
+    return <FileWarning className={cn(className, "text-red-400")} />;
   }
 
   if (status === "Waiting for Approval") {
-    return <Clock3 className={cn(className, "text-amber-600")} />;
+    return <Clock3 className={cn(className, "text-amber-400")} />;
   }
 
-  return <AlertTriangle className={cn(className, "text-blue-600")} />;
+  return <AlertTriangle className={cn(className, "text-blue-400")} />;
 }
 
 export function RecordList<T>({
@@ -179,10 +179,10 @@ export function WorkflowStageMap({
   }>;
 }) {
   const stateStyles: Record<(typeof stages)[number]["state"], string> = {
-    done: "border-emerald-200 bg-emerald-50",
-    active: "border-blue-200 bg-blue-50",
-    upcoming: "border-synapse-border bg-synapse-elevated",
-    blocked: "border-amber-200 bg-amber-50"
+    done: "border-synapse-border border-l-4 border-l-emerald-500 bg-white",
+    active: "border-synapse-border border-l-4 border-l-synapse-primary bg-white shadow-soft",
+    upcoming: "border-synapse-border border-l-4 border-l-slate-300 bg-white",
+    blocked: "border-synapse-border border-l-4 border-l-amber-500 bg-white"
   };
 
   const dotStyles: Record<(typeof stages)[number]["state"], string> = {
@@ -204,7 +204,7 @@ export function WorkflowStageMap({
       {stages.map((stage, index) => (
         <div
           key={stage.label}
-          className={cn("rounded-[22px] border p-4 shadow-sm", stateStyles[stage.state])}
+          className={cn("rounded-[16px] border p-4 shadow-sm", stateStyles[stage.state])}
         >
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -231,25 +231,25 @@ export function AiTransparencyPanel({
   title?: string;
 }) {
   return (
-    <div className="grid gap-4 rounded-[22px] border border-synapse-border bg-synapse-elevated p-4 shadow-sm">
+    <div className="grid gap-4 rounded-2xl border border-synapse-border bg-synapse-elevated p-4 shadow-sm">
       <div>
         <p className="text-card-title text-synapse-text">{title}</p>
         <p className="mt-1 text-body text-synapse-muted">Visible reasoning direction from input through final output.</p>
       </div>
       <div className="grid gap-4 xl:grid-cols-2">
-        <div className="rounded-[18px] border border-synapse-border bg-white p-4">
+        <div className="rounded-xl border border-synapse-border bg-white p-4 shadow-sm">
           <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Direct Result / Final Conclusion</p>
           <p className="mt-3 text-body font-medium text-synapse-text">{insight.directResult}</p>
           <p className="mt-3 text-body text-synapse-muted">{insight.finalConclusion}</p>
-          <div className="mt-4 rounded-2xl bg-blue-50 p-3 text-body text-blue-800">
+          <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-3 text-body text-blue-800">
             <span className="font-semibold">AI advice:</span> {insight.advice}
           </div>
         </div>
-        <div className="rounded-[18px] border border-synapse-border bg-white p-4">
+        <div className="rounded-xl border border-synapse-border bg-white p-4 shadow-sm">
           <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Detailed Thinking Direction / Workflow</p>
           <div className="mt-3 grid gap-3">
             {insight.workflow.map((step) => (
-              <div key={step.title} className="rounded-2xl border border-synapse-border bg-synapse-elevated p-3">
+              <div key={step.title} className="rounded-xl border border-synapse-border bg-synapse-elevated p-3">
                 <p className="text-body font-semibold text-synapse-text">{step.title}</p>
                 <p className="mt-1 text-body text-synapse-muted">{step.detail}</p>
               </div>
@@ -257,11 +257,11 @@ export function AiTransparencyPanel({
           </div>
         </div>
       </div>
-      <div className="rounded-[18px] border border-synapse-border bg-white p-4">
+      <div className="rounded-xl border border-synapse-border bg-white p-4 shadow-sm">
         <p className="text-meta uppercase tracking-[0.08em] text-synapse-muted">Evidence Used</p>
         <div className="mt-3 grid gap-3 md:grid-cols-2">
           {insight.evidence.map((item) => (
-            <div key={`${item.label}-${item.source}`} className="rounded-2xl border border-synapse-border bg-synapse-elevated p-3">
+            <div key={`${item.label}-${item.source}`} className="rounded-xl border border-synapse-border bg-synapse-elevated p-3">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-body font-semibold text-synapse-text">{item.label}</p>
                 <StatusBadge tone={item.source === "External" ? "info" : item.source === "Internal" ? "warning" : "neutral"}>

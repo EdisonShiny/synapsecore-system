@@ -185,7 +185,7 @@ export function DashboardPage() {
             emptyTitle="No workflow records yet"
             emptyDescription={isHq ? "Branch inputs will appear here after the first signal is submitted." : "Create the first workflow input to start the staged process."}
             renderItem={(project) => (
-              <div key={project.id} className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4 shadow-sm">
+              <div key={project.id} className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4 shadow-sm">
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div>
                     <p className="text-card-title text-synapse-text">{project.subject}</p>
@@ -209,7 +209,7 @@ export function DashboardPage() {
             emptyTitle="No active blockers"
             emptyDescription="Use Report Issues when a field problem needs escalation or coordination."
             renderItem={(issue) => (
-              <div key={issue.id} className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4 shadow-sm">
+              <div key={issue.id} className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4 shadow-sm">
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div>
                     <p className="text-card-title text-synapse-text">{issue.subject}</p>
@@ -240,7 +240,7 @@ export function DashboardPage() {
           />
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-[22px] border border-synapse-border bg-synapse-elevated p-4">
+            <div className="rounded-2xl border border-synapse-border bg-synapse-elevated p-4">
               <p className="text-card-title text-synapse-text">Primary action</p>
               <p className="mt-2 text-body text-synapse-muted">
                 {summary.counts["Waiting for Approval"] > 0
@@ -256,7 +256,7 @@ export function DashboardPage() {
                 </SecondaryButton>
               </div>
             </div>
-            <div className="rounded-[22px] border border-synapse-border bg-white p-4">
+            <div className="rounded-2xl border border-synapse-border bg-white p-4">
               <p className="text-card-title text-synapse-text">Secondary action</p>
               <p className="mt-2 text-body text-synapse-muted">
                 Use Report Issues when a branch blocker, data ambiguity, or operational risk needs visible escalation.

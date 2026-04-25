@@ -26,7 +26,7 @@ export function PrimaryButton({ className, ...props }: ButtonProps) {
     <ButtonBase
       className={cn(
         baseButton,
-        "bg-synapse-primary text-white shadow-soft hover:bg-blue-700 active:bg-blue-800",
+        "bg-synapse-primary text-white shadow-sm hover:bg-blue-600 active:bg-blue-700",
         className
       )}
       {...props}
@@ -39,7 +39,7 @@ export function SecondaryButton({ className, ...props }: ButtonProps) {
     <ButtonBase
       className={cn(
         baseButton,
-        "border border-synapse-border bg-white text-synapse-text shadow-sm hover:border-synapse-primary hover:bg-synapse-elevated active:bg-slate-100",
+        "border border-slate-300 bg-white text-synapse-text shadow-sm hover:border-slate-400 hover:bg-synapse-elevated active:bg-slate-200",
         className
       )}
       {...props}
@@ -52,7 +52,7 @@ export function DangerButton({ className, ...props }: ButtonProps) {
     <ButtonBase
       className={cn(
         baseButton,
-        "bg-synapse-error text-white hover:bg-red-700 active:bg-red-800",
+        "bg-synapse-error text-white shadow-sm hover:bg-red-600 active:bg-red-700",
         className
       )}
       {...props}

@@ -11,7 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const fieldBase =
-  "synapse-focus w-full rounded-xl border border-synapse-border bg-white px-3 py-2.5 text-body text-synapse-text placeholder:text-synapse-muted shadow-sm transition hover:border-synapse-primary/60 focus:border-synapse-primary";
+  "synapse-focus w-full rounded-xl border border-synapse-border bg-white px-3 py-2.5 text-body text-synapse-text placeholder:text-slate-400 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus:border-synapse-primary";
 
 type FieldFrameProps = {
   label: string;
@@ -125,14 +125,14 @@ export function FileUploadBox({
     <div className="grid gap-3">
       <label
         htmlFor={inputId}
-        className="synapse-focus flex min-h-36 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-synapse-border bg-white px-6 py-8 text-center transition hover:border-synapse-primary hover:bg-synapse-elevated"
+        className="synapse-focus flex min-h-36 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-synapse-border bg-white px-6 py-8 text-center shadow-sm transition hover:border-slate-300 hover:bg-synapse-elevated"
       >
         <UploadCloud className="h-8 w-8 text-synapse-secondary" />
         <span className="text-card-title text-synapse-text">{label}</span>
         <span className="max-w-sm text-body text-synapse-muted">
           {hint ?? "Drag and drop documents for project, validation, approval, or execution update."}
         </span>
-        <span className="rounded-full border border-synapse-border bg-synapse-elevated px-3 py-1 text-meta text-synapse-muted">
+        <span className="rounded-full border border-synapse-border bg-synapse-elevated px-3 py-1 text-meta text-synapse-muted shadow-sm">
           Choose files
         </span>
         <input
@@ -150,7 +150,7 @@ export function FileUploadBox({
           {files.map((file, index) => (
             <div
               key={`${file.name}-${file.size}-${index}`}
-              className="flex items-start justify-between gap-3 rounded-xl border border-synapse-border bg-white px-3 py-2"
+              className="flex items-start justify-between gap-3 rounded-xl border border-synapse-border bg-white px-3 py-2 shadow-sm"
             >
               <div className="flex items-start gap-2">
                 <Paperclip className="mt-0.5 h-4 w-4 text-synapse-muted" />

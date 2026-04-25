@@ -4,17 +4,17 @@
 
 :root {
   color-scheme: light;
-  --page-background: #EEF4FB;
+  --page-background: #F8FAFC;
   --card-background: #FFFFFF;
-  --elevated-panel: #F7FAFC;
-  --primary-blue: #1D4ED8;
-  --secondary-blue: #0F766E;
+  --elevated-panel: #F1F5F9;
+  --primary-blue: #3B82F6;
+  --secondary-blue: #8B5CF6;
   --primary-text: #0F172A;
-  --secondary-text: #64748B;
-  --border: #D7E3F1;
-  --success: #15803D;
-  --warning: #B45309;
-  --error: #B91C1C;
+  --secondary-text: #475569;
+  --border: #E2E8F0;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --error: #EF4444;
 }
 
 * {
@@ -24,12 +24,9 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(29, 78, 216, 0.10), transparent 28%),
-    radial-gradient(circle at top right, rgba(15, 118, 110, 0.12), transparent 24%),
-    linear-gradient(180deg, #F8FBFF 0%, var(--page-background) 42%, #EAF1F9 100%);
+  background: var(--page-background);
   color: var(--primary-text);
-  font-family: Manrope, Inter, Poppins, ui-sans-serif, system-ui, sans-serif;
+  font-family: Inter, Poppins, "SF Pro Display", ui-sans-serif, system-ui, sans-serif;
 }
 
 button,
@@ -40,7 +37,7 @@ textarea {
 }
 
 ::selection {
-  background: rgba(29, 78, 216, 0.18);
+  background: rgba(37, 99, 235, 0.18);
   color: #0F172A;
 }
 
@@ -51,5 +48,63 @@ textarea {
 
   .synapse-panel {
     @apply rounded-2xl border border-synapse-border bg-synapse-card shadow-panel;
+  }
+}
+
+@layer utilities {
+  .bg-white {
+    background-color: #FFFFFF !important;
+  }
+
+  .bg-white\/90,
+  .bg-white\/85,
+  .bg-white\/82,
+  .bg-white\/80,
+  .bg-white\/75,
+  .bg-white\/70,
+  .bg-white\/55 {
+    background-color: #FFFFFF !important;
+  }
+
+  .border-white\/70,
+  .border-white\/60,
+  .border-white\/50,
+  .border-white\/40 {
+    border-color: #E2E8F0 !important;
+  }
+
+  .bg-blue-50 {
+    background-color: #EFF6FF !important;
+  }
+
+  .bg-emerald-50 {
+    background-color: #F0FDF4 !important;
+  }
+
+  .bg-amber-50 {
+    background-color: #FFFBEB !important;
+  }
+
+  .bg-slate-50 {
+    background-color: #F8FAFC !important;
+  }
+
+  .text-blue-700,
+  .text-blue-800 {
+    color: #1D4ED8 !important;
+  }
+
+  .text-emerald-700,
+  .text-emerald-800 {
+    color: #047857 !important;
+  }
+
+  .text-amber-700,
+  .text-amber-800 {
+    color: #B45309 !important;
+  }
+
+  .text-slate-700 {
+    color: #475569 !important;
   }
 }
