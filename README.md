@@ -1,3 +1,7 @@
+# HIGHLIGHTS
+## 10-minute Pitching Video With Demo (MP4)
+[Google Drive for video](https://drive.google.com/drive/folders/1ExDAWW5rVA183hwlQHl4nhWWiCzY1f5Y?usp=drive_link)
+
 # TEAM: IT WORKS ON MY MACHINE
 - TEAM CODE: 106
 - TEAM MEMBERS: EDISON KONG BANG JEAN (LEADER), DARREN WONGH CHEE LIANG, GOH JUN TECK, LIU YOU ZHENG, LIEW TIAN EN
