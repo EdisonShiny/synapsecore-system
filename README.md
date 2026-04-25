@@ -4,7 +4,7 @@ AI-Powered Agentic Workflow Automation for HQ and Branch Coordination
 
 ## SynapseCore System Design System
 
-Dark-theme-first React/Next.js + TypeScript + Tailwind foundation for the SynapseCore System hackathon frontend.
+React/Next.js + TypeScript + Tailwind foundation for the SynapseCore System frontend.
 
 ## Use
 
